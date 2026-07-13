@@ -168,12 +168,19 @@
     }
   }
 
+  function linkify(text){
+    return text.replace(/(https?:\/\/[^\s|]+)/g, url => {
+      const label = url.includes('youtube.com') ? '▶ צפה בסרטון' : url;
+      return `<a href="${url}" target="_blank" rel="noopener" style="color:#1E8A8D;text-decoration:underline;display:inline-block;margin:3px 0">${label}</a>`;
+    }).replace(/\|\s*/g, '<br>');
+  }
   function addMsg(role,text){
     showChat();
     const area=document.getElementById('messagesArea');
     const d=document.createElement('div');d.className='msg '+(role==='user'?'user':'agent');
     const av=document.createElement('div');av.className='msg-avatar '+(role==='user'?'user-av':'agent');av.textContent=role==='user'?'אתה':'K';
-    const b=document.createElement('div');b.className='bubble';b.textContent=text;
+    const b=document.createElement('div');b.className='bubble';
+    if(role==='agent'){b.innerHTML=linkify(text);}else{b.textContent=text;}
     d.appendChild(av);d.appendChild(b);area.appendChild(d);area.scrollTop=area.scrollHeight;
   }
 
