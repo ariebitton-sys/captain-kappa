@@ -27,7 +27,11 @@
   @keyframes thinking{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-4px) rotate(-2deg)}}
   .captain-img.speaking{animation:speaking .5s ease-in-out infinite}
   @keyframes speaking{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.012)}}
-  .captain-wrap{position:relative;flex-shrink:0}
+  .captain-wrap{position:relative;flex-shrink:0;display:flex;flex-direction:column;align-items:center}
+  .captain-logo{width:120px;height:auto;margin-bottom:4px}
+  .greeting-bubble{background:var(--teal);color:#fff;font-size:14px;font-weight:600;padding:9px 16px;border-radius:16px;margin-bottom:10px;box-shadow:0 4px 14px rgba(43,170,173,.25);position:relative;animation:bob 3s ease-in-out infinite}
+  .greeting-bubble::after{content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%) rotate(45deg);width:12px;height:12px;background:var(--teal)}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
   .tip-bubble{position:absolute;top:6px;right:-4px;background:var(--teal);color:#fff;font-size:12px;font-weight:600;padding:8px 13px;border-radius:14px;border-bottom-right-radius:3px;white-space:nowrap;box-shadow:0 4px 14px rgba(43,170,173,.3);opacity:0;transform:translateY(6px) scale(.9);transition:all .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;z-index:5}
   .tip-bubble.show{opacity:1;transform:translateY(0) scale(1)}
   .tip-bubble::after{content:'';position:absolute;bottom:-5px;right:14px;width:10px;height:10px;background:var(--teal);transform:rotate(45deg)}
@@ -83,10 +87,12 @@
   <div id="welcomeView" class="welcome">
     <div class="captain-hero">
       <div class="captain-speech">
-        <h1>שלום! אני קפטן קאפה 👋</h1>
-        <p>המדריך האישי שלך להשקעות נדל"ן עם קאפה. שאל אותי כל שאלה על עסקאות, תשואות ותהליך ההשקעה.</p>
+        <h1>ברוכים הבאים לקאפה</h1>
+        <p>אני כאן כדי לענות על כל שאלה שיש לך על השקעות נדל"ן עם קאפה — תשואות, מסלולים, ביטחונות ותהליך ההשקעה. במה אוכל לעזור?</p>
       </div>
       <div class="captain-wrap">
+        <img class="captain-logo" src="logo.jpg" alt="Kappa">
+        <div class="greeting-bubble">שלום! אני קפטן קאפה 🧭</div>
         <div class="tip-bubble" id="tipBubble"></div>
         <img class="captain-img" id="captainImg" src="captain.png" alt="קפטן קאפה">
       </div>
@@ -107,7 +113,7 @@
       <button class="send-btn" id="sendBtn" onclick="sendMessage()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
       <textarea id="chatInput" placeholder="שאל את קפטן קאפה כל שאלה על השקעה עם קאפה..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)" onfocus="if(!busy&&!started)setCaptainState('listening')" onblur="if(!busy&&!started)setCaptainState(null)"></textarea>
     </div>
-    <div class="input-footer">Kappa Real Estate Investments &nbsp;·&nbsp;<a href="mailto:arie@kappainv.com">צור קשר ישיר</a></div>
+    <div class="input-footer">Kappa Real Estate Investments &nbsp;·&nbsp;<a href="mailto:ofer@kappainv.com">צור קשר ישיר</a></div>
   </div>
 </div>
 
