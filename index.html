@@ -18,7 +18,19 @@
   .page{flex:1;display:flex;flex-direction:column;max-width:860px;width:100%;margin:0 auto;padding:0 20px;height:calc(100vh - 88px)}
   .welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 0 0}
   .captain-hero{display:flex;align-items:flex-end;gap:0;margin-bottom:24px;width:100%;max-width:640px}
-  .captain-img{width:200px;height:auto;flex-shrink:0;margin-left:-10px}
+  .captain-img{width:200px;height:auto;flex-shrink:0;margin-left:-10px;transform-origin:bottom center;animation:breathe 4s ease-in-out infinite;transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.008)}}
+  @keyframes wave{0%,100%{transform:translateY(0) rotate(0)}15%{transform:translateY(-8px) rotate(-1.5deg)}30%{transform:translateY(-4px) rotate(1.5deg)}45%{transform:translateY(-8px) rotate(-1deg)}60%{transform:translateY(-2px) rotate(.5deg)}}
+  .captain-img.wave{animation:wave 1.4s ease-in-out}
+  .captain-img.listening{animation:breathe 2s ease-in-out infinite;transform:translateY(-3px) scale(1.02)}
+  .captain-img.thinking{animation:thinking 1.2s ease-in-out infinite}
+  @keyframes thinking{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-4px) rotate(-2deg)}}
+  .captain-img.speaking{animation:speaking .5s ease-in-out infinite}
+  @keyframes speaking{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.012)}}
+  .captain-wrap{position:relative;flex-shrink:0}
+  .tip-bubble{position:absolute;top:6px;right:-4px;background:var(--teal);color:#fff;font-size:12px;font-weight:600;padding:8px 13px;border-radius:14px;border-bottom-right-radius:3px;white-space:nowrap;box-shadow:0 4px 14px rgba(43,170,173,.3);opacity:0;transform:translateY(6px) scale(.9);transition:all .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;z-index:5}
+  .tip-bubble.show{opacity:1;transform:translateY(0) scale(1)}
+  .tip-bubble::after{content:'';position:absolute;bottom:-5px;right:14px;width:10px;height:10px;background:var(--teal);transform:rotate(45deg)}
   .captain-speech{background:var(--white);border:1px solid var(--border);border-radius:20px;border-bottom-left-radius:4px;padding:22px 26px;flex:1;box-shadow:0 2px 14px rgba(43,170,173,.08)}
   .captain-speech h1{font-size:23px;font-weight:700;color:var(--gray-dark);margin-bottom:8px}
   .captain-speech p{font-size:15px;color:var(--gray-mid);line-height:1.65}
@@ -74,7 +86,10 @@
         <h1>שלום! אני קפטן קאפה 👋</h1>
         <p>המדריך האישי שלך להשקעות נדל"ן עם קאפה. שאל אותי כל שאלה על עסקאות, תשואות ותהליך ההשקעה.</p>
       </div>
-      <img class="captain-img" src="captain.png" alt="קפטן קאפה">
+      <div class="captain-wrap">
+        <div class="tip-bubble" id="tipBubble"></div>
+        <img class="captain-img" id="captainImg" src="captain.png" alt="קפטן קאפה">
+      </div>
     </div>
     <div class="suggestions">
       <button class="suggestion-btn" onclick="sendSuggestion('מי זאת חברת קאפה?')"><span class="suggestion-icon">🏢</span><span class="suggestion-text">מי זאת חברת קאפה?</span></button>
@@ -90,7 +105,7 @@
   <div class="input-section">
     <div class="input-box">
       <button class="send-btn" id="sendBtn" onclick="sendMessage()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
-      <textarea id="chatInput" placeholder="שאל את קפטן קאפה כל שאלה על השקעה עם קאפה..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <textarea id="chatInput" placeholder="שאל את קפטן קאפה כל שאלה על השקעה עם קאפה..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)" onfocus="if(!busy&&!started)setCaptainState('listening')" onblur="if(!busy&&!started)setCaptainState(null)"></textarea>
     </div>
     <div class="input-footer">Kappa Real Estate Investments &nbsp;·&nbsp;<a href="mailto:arie@kappainv.com">צור קשר ישיר</a></div>
   </div>
@@ -101,6 +116,32 @@
   const WEBHOOK = 'https://ariebitton.app.n8n.cloud/webhook/4dab9948-44ca-4876-a96a-c0d6bf3145bb/chat';
   let sid = 'sess_' + Math.random().toString(36).substr(2,9) + '_' + Date.now();
   let busy = false, started = false;
+
+  // ===== Captain interactive state =====
+  const captain = () => document.getElementById('captainImg');
+  const tipEl = () => document.getElementById('tipBubble');
+  function setCaptainState(state){
+    const c = captain(); if(!c) return;
+    c.classList.remove('wave','listening','thinking','speaking');
+    if(state) c.classList.add(state);
+  }
+  let tipTimer, tipIdx = 0;
+  const tips = ['שאל אותי על תשואות! 📈','רוצה לדעת על הביטחונות? 🔒','מה הסכום המינימלי? 💰','מי אנחנו בקאפה? 🏢'];
+  function showTip(text){
+    const t = tipEl(); if(!t) return;
+    t.textContent = text; t.classList.add('show');
+    clearTimeout(tipTimer);
+    tipTimer = setTimeout(()=>t.classList.remove('show'), 4000);
+  }
+  function startTipCycle(){
+    setTimeout(()=>showTip(tips[0]), 2500);
+    setInterval(()=>{ if(!started){ tipIdx=(tipIdx+1)%tips.length; showTip(tips[tipIdx]); } }, 9000);
+  }
+  window.addEventListener('load', ()=>{
+    setCaptainState('wave');
+    setTimeout(()=>setCaptainState(null), 1500);
+    startTipCycle();
+  });
 
   function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px'}
   function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}}
@@ -162,6 +203,8 @@
     inp.value='';inp.style.height='auto';
     addMsg('user',text);
     showTyping();
+    setCaptainState('thinking');
+    if(tipEl()) tipEl().classList.remove('show');
 
     try{
       const r = await fetch(WEBHOOK, {
@@ -186,12 +229,17 @@
         || (Array.isArray(data) && (data[0]?.output || data[0]?.text))
         || '';
 
-      if(reply) addMsg('agent', reply);
-      else showErr('לא התקבלה תשובה. נסה שוב.');
+      if(reply){
+        addMsg('agent', reply);
+        setCaptainState('speaking');
+        setTimeout(()=>setCaptainState(null), 2000);
+      }
+      else { showErr('לא התקבלה תשובה. נסה שוב.'); setCaptainState(null); }
 
     } catch(e){
       console.error(e);
       showErr('בעיית חיבור. נסה שוב או פנה אלינו ב-arie@kappainv.com');
+      setCaptainState(null);
     }
 
     busy=false;
