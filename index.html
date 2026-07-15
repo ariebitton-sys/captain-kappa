@@ -290,17 +290,26 @@
           <input type="text" id="calcAmount" value="100,000" oninput="formatAmount(this);calc()">
         </div>
         <div class="fund-opts" id="fundOpts"></div>
+        <div id="reinvestWrap" style="margin-top:16px;display:none">
+          <label style="display:flex;align-items:center;gap:9px;cursor:pointer;background:var(--teal-light);border-radius:12px;padding:12px 14px;font-size:13px;font-weight:600;color:var(--teal-dark)">
+            <input type="checkbox" id="reinvestChk" onchange="calc()" style="width:18px;height:18px;accent-color:var(--teal)">
+            השקע מחדש את התקבולים הרבעוניים (ריבית דריבית)
+          </label>
+        </div>
+        <div id="fixedNote" style="margin-top:16px;display:none;background:var(--gold-light);border-radius:12px;padding:12px 14px;font-size:13px;color:#7A6516;font-weight:600">
+          🔒 מסלול זה מציע תשואה קבועה ומובטחת מראש — אינה משתערכת ואינה תלויה בתוצאות עסקיות.
+        </div>
       </div>
       <div class="panel">
         <h3>תוצאות</h3>
-        <div class="res-row"><span class="k">תשואה שנתית צפויה</span><span class="v big" id="rRet">~13%</span></div>
+        <div class="res-row"><span class="k" id="rRetLabel">תשואה שנתית צפויה</span><span class="v big" id="rRet">~13%</span></div>
         <div class="res-row"><span class="k">רווח שנתי משוער</span><span class="v" id="rProfit">$13,000</span></div>
         <div class="res-row"><span class="k">אופק השקעה</span><span class="v" id="rYears">5 שנים</span></div>
-        <div class="res-row" style="border-bottom:none"><span class="k">שווי משוער בתום התקופה</span><span class="v" id="rTotal">$184,244</span></div>
+        <div class="res-row" style="border-bottom:none"><span class="k" id="rTotalLabel">שווי משוער בתום התקופה</span><span class="v" id="rTotal">$184,244</span></div>
         <div class="chart" id="chart"></div>
       </div>
     </div>
-    <div class="disclaimer">⚠️ החישובים המוצגים הם הערכה בלבד על בסיס תשואות צפויות, ואינם מהווים ייעוץ השקעות, הבטחת תשואה או התחייבות מכל סוג. כל עסקה ייחודית ותלוית נסיבות.</div>
+    <div class="disclaimer">⚠️ החישובים המוצגים הם הערכה בלבד על בסיס תשואות צפויות (למעט מסלול ההלוואות, בו התשואה קבועה ומובטחת חוזית), ואינם מהווים ייעוץ השקעות או התחייבות נוספת מכל סוג. כל עסקה ייחודית ותלוית נסיבות.</div>
     <button class="ask-captain" onclick="askAboutFund()">💬 שאל את קפטן קאפה על המסלול הזה</button>
   </div>
 </div>
@@ -310,13 +319,15 @@
 const WEBHOOK='https://ariebitton.app.n8n.cloud/webhook/4dab9948-44ca-4876-a96a-c0d6bf3145bb/chat';
 let sid='sess_'+Math.random().toString(36).substr(2,9)+'_'+Date.now();
 let busy=false;
+const askedSet=new Set();
+function normQ(s){return s.trim().replace(/[?？!।.,]/g,'').toLowerCase();}
 const CLEVELAND_IMG='https://commons.wikimedia.org/wiki/Special:FilePath/Cleveland_skyline_from_Edgewater_Park,_May_2025.jpg?width=900';
 
 const FUNDS={
-  multi:{name:'קרן מולטי סינגל',icon:'🏘',ret:13,years:5,risk:'בינונית',min:'$100,000',kw:['מולטי סינגל','מולטי-סינגל','multi single']},
-  brick:{name:'Kappa Brick Capital',icon:'🏢',ret:13,years:5,risk:'בינונית',min:'$100,000',kw:['בריק','brick']},
-  flip:{name:'השקעות טווח קצר (פליפים)',icon:'🔨',ret:18,years:2,risk:'גבוהה',min:'$100,000',kw:['פליפ','טווח קצר','השבחה']},
-  loan:{name:'הלוואות מגובות נדל"ן',icon:'🛡',ret:8,years:3,risk:'נמוכה',min:'$100,000',kw:['הלוואה','הלוואות','ריבית מובטחת']}
+  multi:{name:'קרן מולטי סינגל',icon:'🏘',ret:13,years:5,risk:'בינונית',min:'$100,000',reinvest:true,fixed:false,kw:['מולטי סינגל','מולטי-סינגל','multi single']},
+  brick:{name:'Kappa Brick Capital',icon:'🏢',ret:13,years:5,risk:'בינונית',min:'$100,000',reinvest:true,fixed:false,kw:['בריק','brick','קפיטל']},
+  flip:{name:'השקעות טווח קצר (פליפים)',icon:'🔨',ret:18,years:2,risk:'גבוהה',min:'$100,000',reinvest:false,fixed:false,kw:['פליפ','פליפים','טווח קצר','השבחה']},
+  loan:{name:'הלוואות מגובות נדל"ן',icon:'🛡',ret:8,years:3,risk:'נמוכה',min:'$100,000',reinvest:false,fixed:true,kw:['הלוואה','הלוואות','ריבית מובטחת','מגובות נדל']}
 };
 
 const TOPICS=[
@@ -332,20 +343,21 @@ const TOPICS=[
 ];
 
 const FOLLOWUPS={
-  'תשואות':['איך מחושבת התשואה?','מה רמות הסיכון?','השווה בין המסלולים'],
-  'מיסוי':['מה זה דוח K-1?','כמה עולה רואה חשבון?','האם משלמים מס גם בישראל?'],
-  'ביטחונות':['מה המבנה המשפטי?','איפה רשומה הקרן?','מה קורה אם רוצים לצאת?'],
-  'יציאה מהשקעה':['כמה זמן לוקחת יציאה?','האם הכסף נעול?','מה מקבלים ביציאה?'],
-  'שוק קליבלנד':['מה מיוחד ביוקליד?','מה מחירי הבתים?','איך שוק השכירות?'],
-  'על קאפה':['מי הצוות המקומי?','כמה עסקאות ביצעתם?','יש המלצות של משקיעים?'],
-  'המלצות משקיעים':['איך מצטרפים?','מה הסכום המינימלי?','ספר על המסלולים'],
-  'תהליך ההשקעה':['מה הסכום המינימלי?','כמה זמן לוקח?','מה חותמים?'],
-  'מסלולי השקעה':['השווה בין המסלולים','מה הכי מתאים למתחילים?','מה הסכום המינימלי?'],
-  'default':['מה הסכום המינימלי?','אילו ביטחונות יש?','ספר על הצוות']
+  'תשואות':['מה רמות הסיכון בכל מסלול?','השווה בין כל המסלולים','איזה מסלול מאפשר ריבית דריבית?','מה ההבדל בין תשואה מובטחת לצפויה?'],
+  'מיסוי':['מה זה דוח K-1?','כמה עולה רואה חשבון אמריקאי?','האם משלמים מס גם בישראל?','מתי מגישים את הדוחות?'],
+  'ביטחונות':['מה המבנה המשפטי של ההשקעה?','איפה רשומה הקרן?','מה קורה אם רוצים לצאת מוקדם?','מי בעל השליטה בנכסים?'],
+  'יציאה מהשקעה':['כמה זמן לוקחת יציאה בפועל?','האם הכסף נעול לתקופה קבועה?','מה מקבלים בעת יציאה?','האם אפשר למכור לחלקים?'],
+  'שוק קליבלנד':['מה מיוחד באזור יוקליד?','מה מגמת מחירי הבתים?','איך שוק השכירות באזור?','למה דווקא אוהיו ולא מדינה אחרת?'],
+  'על קאפה':['מי הצוות המקומי בקליבלנד?','כמה עסקאות קאפה כבר ביצעה?','יש המלצות מצולמות של משקיעים?','מי מייסדי החברה?'],
+  'המלצות משקיעים':['איך מצטרפים כמשקיע חדש?','מה הסכום המינימלי הנדרש?','ספר לי על מסלולי ההשקעה'],
+  'תהליך ההשקעה':['מה הסכום המינימלי להתחלה?','כמה זמן לוקח כל התהליך?','אילו מסמכים חותמים?'],
+  'מסלולי השקעה':['השווה בין כל המסלולים','איזה מסלול הכי מתאים למתחילים?','באיזה מסלול יש ריבית דריבית?','מה ההבדל בין תשואה מובטחת לצפויה?'],
+  'default':['אילו ביטחונות יש למשקיע?','ספר לי על הצוות של קאפה','איך מתבצע תהליך ההצטרפות?']
 };
 
 const INTENT_RE=/(רוצה להשקיע|מעוניין|מעוניינת|איך מצטרפ|להצטרף|בוא נתקדם|רוצה להתחיל)/;
-const COMPARE_RE=/(השוו|השווה|הבדל|לעומת|מול |בין המסלולים)/;
+const COMPARE_RE=/(השוו|השווה|הבדל|לעומת|מול |בין המסלולים|כל המסלולים)/;
+const GENERAL_COMPARE_RE=/(בין המסלולים|כל המסלולים|כל הקרנות|כלל המסלולים)/;
 
 /* ================= NAVIGATION ================= */
 function showScreen(name){
@@ -355,6 +367,7 @@ function showScreen(name){
 }
 function goHome(){
   sid='sess_'+Math.random().toString(36).substr(2,9)+'_'+Date.now();
+  askedSet.clear();
   document.getElementById('chatInner').innerHTML='';
   showScreen('landing');
 }
@@ -410,22 +423,29 @@ function linkify(text){
 }
 function fundCardHTML(key){
   const f=FUNDS[key];
+  const retLabel=f.fixed?`${f.ret}% <span style="font-size:11px;font-weight:600">(מובטחת)</span>`:`~${f.ret}%`;
+  const note=f.reinvest
+    ? '💡 ניתן לבחור להשקיע מחדש את התקבולים הרבעוניים וליהנות מריבית דריבית'
+    : (f.fixed ? '💡 תשואה קבועה ומובטחת מראש — לא משתערכת, ללא אפשרות ריבית דריבית' : '💡 מסלול חד-פעמי ללא תקבולים שוטפים להשקעה מחדש');
   return `<div class="fund-card">
     <div class="fc-head"><span>${f.icon}</span> ${f.name}</div>
     <div class="fc-rows">
-      <div class="fc-row"><span class="k">תשואה שנתית צפויה</span><span class="v gold">~${f.ret}%</span></div>
+      <div class="fc-row"><span class="k">תשואה שנתית</span><span class="v gold">${retLabel}</span></div>
       <div class="fc-row"><span class="k">אופק השקעה</span><span class="v">${f.years} שנים</span></div>
       <div class="fc-row"><span class="k">רמת סיכון</span><span class="v">${f.risk}</span></div>
       <div class="fc-row"><span class="k">השקעה מינימלית</span><span class="v">${f.min}</span></div>
     </div>
+    <div style="padding:0 18px 14px;font-size:12.5px;color:var(--gray);line-height:1.6">${note}</div>
     <button class="fc-btn" onclick="submitQuestion('ספר לי עוד על ${f.name}')">שאל עוד על המסלול</button>
   </div>`;
 }
 function compareTableHTML(keys){
   const rows=keys.map(k=>{const f=FUNDS[k];
-    return `<tr><td><b>${f.icon} ${f.name}</b></td><td class="gold">~${f.ret}%</td><td>${f.years} שנים</td><td>${f.risk}</td><td>${f.min}</td></tr>`;}).join('');
+    const retLabel=f.fixed?`<span class="gold">${f.ret}% (מובטחת)</span>`:`<span class="gold">~${f.ret}%</span>`;
+    const reinvestLabel=f.reinvest?'✅ כן':'—';
+    return `<tr><td><b>${f.icon} ${f.name}</b></td><td>${retLabel}</td><td>${f.years} שנים</td><td>${f.risk}</td><td>${reinvestLabel}</td><td>${f.min}</td></tr>`;}).join('');
   return `<div class="cmp-wrap"><table class="cmp">
-    <tr><th>מסלול</th><th>תשואה צפויה</th><th>אופק</th><th>סיכון</th><th>מינימום</th></tr>${rows}</table></div>`;
+    <tr><th>מסלול</th><th>תשואה</th><th>אופק</th><th>סיכון</th><th>ריבית דריבית</th><th>מינימום</th></tr>${rows}</table></div>`;
 }
 function timelineHTML(){
   const steps=['שיחת היכרות והתאמת מסלול','חתימה על הסכמי השקעה','העברת כספי ההשקעה','הצטרפות רשמית כמשקיע','עדכונים ודיווחים רבעוניים'];
@@ -437,8 +457,9 @@ function cityImgHTML(){
 
 function addAgentAnswer(userQ,answer){
   const topic=detectTopic(userQ,answer);
-  const funds=detectFunds(userQ+' '+answer);
+  let funds = (topic.title==='על קאפה') ? [] : detectFunds(userQ+' '+answer);
   const isCompare=COMPARE_RE.test(userQ)||funds.length>=2;
+  if(isCompare && (GENERAL_COMPARE_RE.test(userQ) || funds.length<2)) funds=Object.keys(FUNDS);
 
   let inner='';
   if(isCompare&&funds.length>=2) inner+=compareTableHTML(funds);
@@ -454,10 +475,11 @@ function addAgentAnswer(userQ,answer){
   </div>`);
   document.getElementById('chatInner').appendChild(card);
 
-  const fups=FOLLOWUPS[topic.title]||FOLLOWUPS['default'];
-  const chips=el(`<div class="chips">`+fups.map(f=>`<button class="chip">${f}</button>`).join('')+`</div>`);
+  const fups=(FOLLOWUPS[topic.title]||FOLLOWUPS['default']).filter(f=>!askedSet.has(normQ(f)));
+  const shown=fups.slice(0,3);
+  const chips=el(`<div class="chips">`+shown.map(f=>`<button class="chip">${f}</button>`).join('')+`</div>`);
   chips.querySelectorAll('.chip').forEach(ch=>ch.onclick=()=>submitQuestion(ch.textContent));
-  document.getElementById('chatInner').appendChild(chips);
+  if(shown.length) document.getElementById('chatInner').appendChild(chips);
 
   if(INTENT_RE.test(userQ)) addCTA();
   scrollBottom();
@@ -489,6 +511,7 @@ function setMini(state){
 
 async function submitQuestion(text){
   if(busy)return;busy=true;
+  askedSet.add(normQ(text));
   document.getElementById('sendBtn').disabled=true;
   addUserMsg(text);showTyping();setMini('thinking');
   try{
@@ -534,14 +557,34 @@ function getAmount(){
 }
 function calc(){
   const f=FUNDS[selFund];const amt=getAmount();
-  const total=amt*Math.pow(1+f.ret/100,f.years);
-  document.getElementById('rRet').textContent='~'+f.ret+'%';
-  document.getElementById('rProfit').textContent='$'+Math.round(amt*f.ret/100).toLocaleString('en-US');
+  const reinvestWrap=document.getElementById('reinvestWrap');
+  const fixedNote=document.getElementById('fixedNote');
+  const chk=document.getElementById('reinvestChk');
+
+  reinvestWrap.style.display=f.reinvest?'block':'none';
+  fixedNote.style.display=f.fixed?'block':'none';
+  const doCompound=f.reinvest && chk.checked;
+
+  document.getElementById('rRetLabel').textContent=f.fixed?'תשואה שנתית מובטחת':'תשואה שנתית צפויה';
+  document.getElementById('rRet').textContent=(f.fixed?f.ret:'~'+f.ret)+'%';
+  document.getElementById('rTotalLabel').textContent=doCompound?'שווי בתום התקופה (עם ריבית דריבית)':'שווי משוער בתום התקופה';
+
+  let total, annualProfit;
+  if(doCompound){
+    total=amt*Math.pow(1+f.ret/100,f.years);
+    annualProfit=amt*f.ret/100;
+  } else {
+    annualProfit=amt*f.ret/100;
+    total=amt+annualProfit*f.years;
+  }
+
+  document.getElementById('rProfit').textContent='$'+Math.round(annualProfit).toLocaleString('en-US');
   document.getElementById('rYears').textContent=f.years+' שנים';
   document.getElementById('rTotal').textContent='$'+Math.round(total).toLocaleString('en-US');
+
   const ch=document.getElementById('chart');ch.innerHTML='';
   for(let y=0;y<=f.years;y++){
-    const val=amt*Math.pow(1+f.ret/100,y);
+    const val = doCompound ? amt*Math.pow(1+f.ret/100,y) : amt+annualProfit*y;
     const h=Math.max(8,(val/total)*90);
     ch.appendChild(el(`<div class="bar" style="height:${h}px"><div class="bl">$${Math.round(val/1000)}K</div><div class="by">${y===0?'היום':'שנה '+y}</div></div>`));
   }
