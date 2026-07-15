@@ -558,15 +558,16 @@ function getAmount(){
 }
 function fundValueAtYear(f, amt, y, doCompound){
   if(f.cashYield!=null && f.apprec!=null){
-    // Appreciation sleeve: always compounds (market value growth, not a reinvestment choice)
+    // Appreciation sleeve: annual compounding on property value
     const appVal = amt*Math.pow(1+f.apprec/100,y);
-    // Cash-yield sleeve: compounds only if investor chose to reinvest quarterly distributions
+    // Cash-yield sleeve: quarterly compounding if investor reinvests distributions
+    // (quarterly rate = annual/4, periods = years×4)
     const cashProfit = doCompound
-      ? (amt*Math.pow(1+f.cashYield/100,y) - amt)
+      ? (amt*Math.pow(1+f.cashYield/100/4, y*4) - amt)
       : (amt*f.cashYield/100*y);
     return appVal + cashProfit;
   }
-  // Fixed-rate loans / flips: simple linear accrual (no compounding mechanism offered)
+  // Fixed-rate loans / flips: simple linear accrual
   return amt + (amt*f.ret/100)*y;
 }
 
@@ -582,7 +583,7 @@ function calc(){
 
   document.getElementById('rRetLabel').textContent=f.fixed?'תשואה שנתית מובטחת':'תשואה שנתית צפויה';
   document.getElementById('rRet').textContent=(f.fixed?f.ret:'~'+f.ret)+'%';
-  document.getElementById('rTotalLabel').textContent=doCompound?'שווי בתום התקופה (עם ריבית דריבית על התקבולים)':'שווי משוער בתום התקופה';
+  document.getElementById('rTotalLabel').textContent=doCompound?'שווי בתום התקופה (ריבית דריבית רבעונית)':'שווי משוער בתום התקופה';
 
   const total = fundValueAtYear(f, amt, f.years, doCompound);
   const annualProfit = amt*f.ret/100;
