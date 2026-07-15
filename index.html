@@ -295,6 +295,7 @@
             <input type="checkbox" id="reinvestChk" onchange="calc()" style="width:18px;height:18px;accent-color:var(--teal)">
             השקע מחדש את התקבולים הרבעוניים (ריבית דריבית)
           </label>
+          <div style="font-size:11.5px;color:var(--gray);padding:6px 4px 0;line-height:1.5">התשואה השוטפת (~6.5%) ניתנת להשקעה חוזרת לבחירתך. עליית הערך הצפויה (~6.5%) מצטברת באופן עצמאי בכל מקרה, בהתאם לשווי הנכסים.</div>
         </div>
         <div id="fixedNote" style="margin-top:16px;display:none;background:var(--gold-light);border-radius:12px;padding:12px 14px;font-size:13px;color:#7A6516;font-weight:600">
           🔒 מסלול זה מציע תשואה קבועה ומובטחת מראש — אינה משתערכת ואינה תלויה בתוצאות עסקיות.
@@ -324,8 +325,8 @@ function normQ(s){return s.trim().replace(/[?？!।.,]/g,'').toLowerCase();}
 const CLEVELAND_IMG='https://commons.wikimedia.org/wiki/Special:FilePath/Cleveland_skyline_from_Edgewater_Park,_May_2025.jpg?width=900';
 
 const FUNDS={
-  multi:{name:'קרן מולטי סינגל',icon:'🏘',ret:13,years:5,risk:'בינונית',min:'$100,000',reinvest:true,fixed:false,kw:['מולטי סינגל','מולטי-סינגל','multi single']},
-  brick:{name:'Kappa Brick Capital',icon:'🏢',ret:13,years:5,risk:'בינונית',min:'$100,000',reinvest:true,fixed:false,kw:['בריק','brick','קפיטל']},
+  multi:{name:'קרן מולטי סינגל',icon:'🏘',ret:13,years:5,risk:'בינונית',min:'$100,000',reinvest:true,fixed:false,cashYield:6.5,apprec:6.5,kw:['מולטי סינגל','מולטי-סינגל','multi single']},
+  brick:{name:'Kappa Brick Capital',icon:'🏢',ret:13,years:5,risk:'בינונית',min:'$100,000',reinvest:true,fixed:false,cashYield:6.5,apprec:6.5,kw:['בריק','brick','קפיטל']},
   flip:{name:'השקעות טווח קצר (פליפים)',icon:'🔨',ret:18,years:2,risk:'גבוהה',min:'$100,000',reinvest:false,fixed:false,kw:['פליפ','פליפים','טווח קצר','השבחה']},
   loan:{name:'הלוואות מגובות נדל"ן',icon:'🛡',ret:8,years:3,risk:'נמוכה',min:'$100,000',reinvest:false,fixed:true,kw:['הלוואה','הלוואות','ריבית מובטחת','מגובות נדל']}
 };
@@ -468,7 +469,7 @@ function addAgentAnswer(userQ,answer){
   if(topic.img) inner+=cityImgHTML();
 
   const card=el(`<div class="agent-card">
-    <div class="ac-head"><div class="ac-icon">${topic.icon}</div><div class="ac-title">${topic.title}</div></div>
+    <div class="ac-head"><div class="ac-icon">🧭</div><div class="ac-title">Captain Kappa · Real Estate Investments</div></div>
     <div class="ac-body">${linkify(escapeHTML(answer))}</div>
     ${inner}
     <div class="ac-src">📚 מקור: מאגר הידע הרשמי של קאפה</div>
@@ -555,6 +556,20 @@ function getAmount(){
   const v=document.getElementById('calcAmount').value.replace(/[^\d]/g,'');
   return parseInt(v)||0;
 }
+function fundValueAtYear(f, amt, y, doCompound){
+  if(f.cashYield!=null && f.apprec!=null){
+    // Appreciation sleeve: always compounds (market value growth, not a reinvestment choice)
+    const appVal = amt*Math.pow(1+f.apprec/100,y);
+    // Cash-yield sleeve: compounds only if investor chose to reinvest quarterly distributions
+    const cashProfit = doCompound
+      ? (amt*Math.pow(1+f.cashYield/100,y) - amt)
+      : (amt*f.cashYield/100*y);
+    return appVal + cashProfit;
+  }
+  // Fixed-rate loans / flips: simple linear accrual (no compounding mechanism offered)
+  return amt + (amt*f.ret/100)*y;
+}
+
 function calc(){
   const f=FUNDS[selFund];const amt=getAmount();
   const reinvestWrap=document.getElementById('reinvestWrap');
@@ -567,16 +582,10 @@ function calc(){
 
   document.getElementById('rRetLabel').textContent=f.fixed?'תשואה שנתית מובטחת':'תשואה שנתית צפויה';
   document.getElementById('rRet').textContent=(f.fixed?f.ret:'~'+f.ret)+'%';
-  document.getElementById('rTotalLabel').textContent=doCompound?'שווי בתום התקופה (עם ריבית דריבית)':'שווי משוער בתום התקופה';
+  document.getElementById('rTotalLabel').textContent=doCompound?'שווי בתום התקופה (עם ריבית דריבית על התקבולים)':'שווי משוער בתום התקופה';
 
-  let total, annualProfit;
-  if(doCompound){
-    total=amt*Math.pow(1+f.ret/100,f.years);
-    annualProfit=amt*f.ret/100;
-  } else {
-    annualProfit=amt*f.ret/100;
-    total=amt+annualProfit*f.years;
-  }
+  const total = fundValueAtYear(f, amt, f.years, doCompound);
+  const annualProfit = amt*f.ret/100;
 
   document.getElementById('rProfit').textContent='$'+Math.round(annualProfit).toLocaleString('en-US');
   document.getElementById('rYears').textContent=f.years+' שנים';
@@ -584,7 +593,7 @@ function calc(){
 
   const ch=document.getElementById('chart');ch.innerHTML='';
   for(let y=0;y<=f.years;y++){
-    const val = doCompound ? amt*Math.pow(1+f.ret/100,y) : amt+annualProfit*y;
+    const val = fundValueAtYear(f, amt, y, doCompound);
     const h=Math.max(8,(val/total)*90);
     ch.appendChild(el(`<div class="bar" style="height:${h}px"><div class="bl">$${Math.round(val/1000)}K</div><div class="by">${y===0?'היום':'שנה '+y}</div></div>`));
   }
