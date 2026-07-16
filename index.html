@@ -191,6 +191,26 @@
   .ask-captain{display:block;margin:0 auto;background:var(--navy);color:#fff;border:none;border-radius:14px;padding:15px 30px;font-size:15px;font-weight:700;transition:all .2s}
   .ask-captain:hover{background:var(--navy-light);transform:translateY(-2px);box-shadow:var(--shadow-md)}
 
+  /* ===== LEAD GATE ===== */
+  .gate-overlay{position:fixed;inset:0;background:rgba(27,42,74,.55);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+  .gate-overlay.show{display:flex;animation:screenIn .3s ease}
+  .gate-card{background:var(--white);border-radius:22px;max-width:420px;width:100%;box-shadow:var(--shadow-lg);overflow:hidden}
+  .gate-head{background:linear-gradient(135deg,var(--navy),var(--navy-light));color:#fff;padding:24px;text-align:center}
+  .gate-head img{width:70px;margin-bottom:8px}
+  .gate-head h3{font-size:19px;font-weight:700}
+  .gate-head p{font-size:13px;opacity:.85;margin-top:5px;line-height:1.5}
+  .gate-body{padding:22px 24px 24px}
+  .gate-fld{margin-bottom:14px}
+  .gate-fld label{display:block;font-size:13px;font-weight:600;color:var(--gray);margin-bottom:6px}
+  .gate-fld input{width:100%;border:1.5px solid var(--border);border-radius:12px;padding:12px 15px;font-size:15px;font-family:'Heebo',sans-serif;color:var(--navy);outline:none;direction:rtl}
+  .gate-fld input:focus{border-color:var(--teal)}
+  .gate-fld input.err{border-color:#E05555}
+  .gate-consent{display:flex;align-items:flex-start;gap:9px;font-size:12px;color:var(--gray);line-height:1.55;margin:16px 0;cursor:pointer}
+  .gate-consent input{width:17px;height:17px;accent-color:var(--teal);margin-top:1px;flex-shrink:0}
+  .gate-btn{width:100%;background:var(--teal);color:#fff;border:none;border-radius:13px;padding:14px;font-size:15px;font-weight:700;transition:all .2s}
+  .gate-btn:hover{background:var(--teal-dark)}
+  .gate-err{color:#E05555;font-size:12px;text-align:center;margin-top:10px;min-height:16px}
+
   /* ===== RESPONSIVE ===== */
   @media(max-width:860px){.topics-grid{grid-template-columns:repeat(2,1fr)}.calc-grid{grid-template-columns:1fr}}
   @media(max-width:560px){
@@ -315,6 +335,33 @@
   </div>
 </div>
 
+<!-- ============ LEAD GATE ============ -->
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <div class="gate-head">
+      <img src="captain.png" alt="">
+      <h3>נעים להכיר! 👋</h3>
+      <p>כדי שקפטן קאפה יוכל לתת לך את השירות הטוב ביותר, נשמח להכיר אותך בקצרה</p>
+    </div>
+    <div class="gate-body">
+      <div class="gate-fld">
+        <label>שם מלא</label>
+        <input type="text" id="leadName" placeholder="ישראל ישראלי">
+      </div>
+      <div class="gate-fld">
+        <label>אימייל</label>
+        <input type="email" id="leadEmail" placeholder="you@example.com" style="direction:ltr;text-align:right">
+      </div>
+      <label class="gate-consent">
+        <input type="checkbox" id="leadConsent">
+        <span>אני מאשר/ת לקבוצת קאפה ליצור איתי קשר בנוגע להשקעות נדל"ן, ומסכים/ה לשמירת הפרטים שמסרתי לצורך כך. ניתן להסיר את ההסכמה בכל עת.</span>
+      </label>
+      <button class="gate-btn" onclick="submitLead()">התחל שיחה עם קפטן קאפה</button>
+      <div class="gate-err" id="gateErr"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ================= CONFIG ================= */
 const WEBHOOK='https://ariebitton.app.n8n.cloud/webhook/4dab9948-44ca-4876-a96a-c0d6bf3145bb/chat';
@@ -322,6 +369,31 @@ let sid='sess_'+Math.random().toString(36).substr(2,9)+'_'+Date.now();
 let busy=false;
 const askedSet=new Set();
 function normQ(s){return s.trim().replace(/[?？!।.,]/g,'').toLowerCase();}
+
+/* ===== LEAD GATE ===== */
+const FREE_QUESTIONS=0; // 0 = require registration before first question; N = allow N free questions first
+let questionCount=0;
+let pendingQuestion=null;
+function getLead(){try{return JSON.parse(localStorage.getItem('kappa_lead'))||null;}catch(e){return null;}}
+function saveLead(l){localStorage.setItem('kappa_lead',JSON.stringify(l));}
+function needGate(){return !getLead() && questionCount>=FREE_QUESTIONS;}
+function showGate(){document.getElementById('gateOverlay').classList.add('show');setTimeout(()=>document.getElementById('leadName').focus(),200);}
+function hideGate(){document.getElementById('gateOverlay').classList.remove('show');}
+function submitLead(){
+  const name=document.getElementById('leadName').value.trim();
+  const email=document.getElementById('leadEmail').value.trim();
+  const consent=document.getElementById('leadConsent').checked;
+  const err=document.getElementById('gateErr');
+  document.getElementById('leadName').classList.remove('err');
+  document.getElementById('leadEmail').classList.remove('err');
+  if(name.length<2){err.textContent='נא להזין שם מלא';document.getElementById('leadName').classList.add('err');return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){err.textContent='נא להזין כתובת אימייל תקינה';document.getElementById('leadEmail').classList.add('err');return;}
+  if(!consent){err.textContent='נדרש אישור ליצירת קשר כדי להמשיך';return;}
+  saveLead({name,email,consentAt:new Date().toISOString()});
+  err.textContent='';
+  hideGate();
+  if(pendingQuestion){const q=pendingQuestion;pendingQuestion=null;submitQuestion(q);}
+}
 const CLEVELAND_IMG='https://commons.wikimedia.org/wiki/Special:FilePath/Cleveland_skyline_from_Edgewater_Park,_May_2025.jpg?width=900';
 
 const FUNDS={
@@ -511,13 +583,17 @@ function setMini(state){
 }
 
 async function submitQuestion(text){
-  if(busy)return;busy=true;
+  if(busy)return;
+  if(needGate()){pendingQuestion=text;showGate();return;}
+  busy=true;
+  questionCount++;
   askedSet.add(normQ(text));
   document.getElementById('sendBtn').disabled=true;
   addUserMsg(text);showTyping();setMini('thinking');
+  const lead=getLead()||{};
   try{
     const r=await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'sendMessage',sessionId:sid,chatInput:text})});
+      body:JSON.stringify({action:'sendMessage',sessionId:sid,chatInput:text,userName:lead.name||'',userEmail:lead.email||''})});
     if(!r.ok)throw new Error('HTTP '+r.status);
     const data=await r.json();hideTyping();
     const reply=data.output||data.text||data.message||data.response
