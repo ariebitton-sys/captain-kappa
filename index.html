@@ -390,6 +390,7 @@ function submitLead(){
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){err.textContent='נא להזין כתובת אימייל תקינה';document.getElementById('leadEmail').classList.add('err');return;}
   if(!consent){err.textContent='נדרש אישור ליצירת קשר כדי להמשיך';return;}
   saveLead({name,email,consentAt:new Date().toISOString()});
+  window.newLeadPending=true;
   err.textContent='';
   hideGate();
   if(pendingQuestion){const q=pendingQuestion;pendingQuestion=null;submitQuestion(q);}
@@ -591,9 +592,11 @@ async function submitQuestion(text){
   document.getElementById('sendBtn').disabled=true;
   addUserMsg(text);showTyping();setMini('thinking');
   const lead=getLead()||{};
+  const isNew=window.newLeadPending===true;
   try{
     const r=await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'sendMessage',sessionId:sid,chatInput:text,userName:lead.name||'',userEmail:lead.email||''})});
+      body:JSON.stringify({action:'sendMessage',sessionId:sid,chatInput:text,userName:lead.name||'',userEmail:lead.email||'',isNewLead:isNew})});
+    if(isNew)window.newLeadPending=false;
     if(!r.ok)throw new Error('HTTP '+r.status);
     const data=await r.json();hideTyping();
     const reply=data.output||data.text||data.message||data.response
