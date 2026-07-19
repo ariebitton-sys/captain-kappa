@@ -530,15 +530,18 @@ function cityImgHTML(){
   return `<div class="city-img"><img src="${CLEVELAND_IMG}" alt="קליבלנד, אוהיו" onerror="this.closest('.city-img').style.display='none'"><div class="cap">📍 קליבלנד, אוהיו — אזור הפעילות של קאפה · צילום: Erik Drost (CC BY 2.0)</div></div>`;
 }
 
+const FUND_PRIORITY=['multi','brick','flip','loan'];
+function sortByPriority(keys){return keys.slice().sort((a,b)=>FUND_PRIORITY.indexOf(a)-FUND_PRIORITY.indexOf(b));}
+
 function addAgentAnswer(userQ,answer){
   const topic=detectTopic(userQ,answer);
-  let funds = (topic.title==='על קאפה') ? [] : detectFunds(userQ+' '+answer);
+  let funds = (topic.title==='על קאפה') ? [] : sortByPriority(detectFunds(userQ+' '+answer));
   const isCompare=COMPARE_RE.test(userQ)||funds.length>=2;
-  if(isCompare && (GENERAL_COMPARE_RE.test(userQ) || funds.length<2)) funds=Object.keys(FUNDS);
+  if(isCompare && (GENERAL_COMPARE_RE.test(userQ) || funds.length<2)) funds=sortByPriority(Object.keys(FUNDS));
 
   let inner='';
   if(isCompare&&funds.length>=2) inner+=compareTableHTML(funds);
-  else if(funds.length===1) inner+=fundCardHTML(funds[0]);
+  else if(funds.length===1) inner+=`<div style="margin:14px 20px 0;font-size:12px;font-weight:600;color:var(--gray)">📌 לדוגמה, כך נראית אפשרות השקעה:</div>`+fundCardHTML(funds[0]);
   if(topic.timeline) inner+=timelineHTML();
   if(topic.img) inner+=cityImgHTML();
 
@@ -550,14 +553,18 @@ function addAgentAnswer(userQ,answer){
   </div>`);
   document.getElementById('chatInner').appendChild(card);
 
-  const fups=(FOLLOWUPS[topic.title]||FOLLOWUPS['default']).filter(f=>!askedSet.has(normQ(f)));
-  const shown=fups.slice(0,3);
-  const chips=el(`<div class="chips">`+shown.map(f=>`<button class="chip">${f}</button>`).join('')+`</div>`);
-  chips.querySelectorAll('.chip').forEach(ch=>ch.onclick=()=>submitQuestion(ch.textContent));
-  if(shown.length) document.getElementById('chatInner').appendChild(chips);
+  const meetingIntentNow = INTENT_RE.test(userQ) && !ctaShown;
+
+  if(!meetingIntentNow){
+    const fups=(FOLLOWUPS[topic.title]||FOLLOWUPS['default']).filter(f=>!askedSet.has(normQ(f)));
+    const shown=fups.slice(0,3);
+    const chips=el(`<div class="chips">`+shown.map(f=>`<button class="chip">${f}</button>`).join('')+`</div>`);
+    chips.querySelectorAll('.chip').forEach(ch=>ch.onclick=()=>submitQuestion(ch.textContent));
+    if(shown.length) document.getElementById('chatInner').appendChild(chips);
+  }
 
   answerCount++;
-  if(!ctaShown && (INTENT_RE.test(userQ) || answerCount>=4)){addCTA();ctaShown=true;}
+  if(!ctaShown && (meetingIntentNow || answerCount>=4)){addCTA();ctaShown=true;}
   scrollBottom();
 }
 function escapeHTML(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
