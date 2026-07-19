@@ -367,6 +367,7 @@
 const WEBHOOK='https://ariebitton.app.n8n.cloud/webhook/4dab9948-44ca-4876-a96a-c0d6bf3145bb/chat';
 let sid='sess_'+Math.random().toString(36).substr(2,9)+'_'+Date.now();
 let busy=false;
+let answerCount=0, ctaShown=false;
 const askedSet=new Set();
 function normQ(s){return s.trim().replace(/[?？!।.,]/g,'').toLowerCase();}
 
@@ -555,16 +556,17 @@ function addAgentAnswer(userQ,answer){
   chips.querySelectorAll('.chip').forEach(ch=>ch.onclick=()=>submitQuestion(ch.textContent));
   if(shown.length) document.getElementById('chatInner').appendChild(chips);
 
-  if(INTENT_RE.test(userQ)) addCTA();
+  answerCount++;
+  if(!ctaShown && (INTENT_RE.test(userQ) || answerCount>=4)){addCTA();ctaShown=true;}
   scrollBottom();
 }
 function escapeHTML(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
 function addCTA(){
   const c=el(`<div class="cta-card">
-    <h3>🚀 מוכן להפוך למשקיע של קאפה?</h3>
+    <h3>📅 נשמע שאתה בכיוון! נתאם שיחת היכרות קצרה?</h3>
     <div class="cta-btns">
-      <a class="cta-btn" href="mailto:ofer@kappainv.com?subject=מעוניין להשקיע עם קאפה">📩 שלח מייל</a>
+      <a class="cta-btn" href="mailto:ofer@kappainv.com?subject=תיאום שיחת היכרות - קפטן קאפה&body=היי, שוחחתי עם קפטן קאפה ואשמח לתאם שיחת היכרות קצרה.">📩 תיאום במייל</a>
       <a class="cta-btn ghost" href="tel:0542376933">📞 054-2376933</a>
       <a class="cta-btn ghost" href="https://bit.ly/kappatestimonials" target="_blank">🎥 המלצות משקיעים</a>
     </div>
