@@ -375,8 +375,41 @@ function normQ(s){return s.trim().replace(/[?？!।.,]/g,'').toLowerCase();}
 const FREE_QUESTIONS=0; // 0 = require registration before first question; N = allow N free questions first
 let questionCount=0;
 let pendingQuestion=null;
-function getLead(){try{return JSON.parse(localStorage.getItem('kappa_lead'))||null;}catch(e){return null;}}
-function saveLead(l){localStorage.setItem('kappa_lead',JSON.stringify(l));}
+function setCookie(name,value,days){
+  try{
+    const d=new Date();d.setTime(d.getTime()+days*24*60*60*1000);
+    document.cookie=name+'='+encodeURIComponent(value)+';expires='+d.toUTCString()+';path=/;SameSite=Lax';
+  }catch(e){}
+}
+function getCookie(name){
+  try{
+    const m=document.cookie.match('(^|;)\\s*'+name+'\\s*=\\s*([^;]+)');
+    return m?decodeURIComponent(m.pop()):null;
+  }catch(e){return null;}
+}
+function getLead(){
+  // Prefer localStorage; fall back to a long-lived cookie for browsers/in-app
+  // webviews (e.g. WhatsApp's built-in browser) that don't persist localStorage
+  // between separate openings of the link.
+  try{
+    const ls=localStorage.getItem('kappa_lead');
+    if(ls)return JSON.parse(ls);
+  }catch(e){}
+  try{
+    const ck=getCookie('kappa_lead');
+    if(ck){
+      const parsed=JSON.parse(ck);
+      try{localStorage.setItem('kappa_lead',ck);}catch(e){}
+      return parsed;
+    }
+  }catch(e){}
+  return null;
+}
+function saveLead(l){
+  const s=JSON.stringify(l);
+  try{localStorage.setItem('kappa_lead',s);}catch(e){}
+  setCookie('kappa_lead',s,365);
+}
 function needGate(){return !getLead() && questionCount>=FREE_QUESTIONS;}
 function showGate(){document.getElementById('gateOverlay').classList.add('show');setTimeout(()=>document.getElementById('leadName').focus(),200);}
 function hideGate(){document.getElementById('gateOverlay').classList.remove('show');}
@@ -470,6 +503,13 @@ function showContactCTA(){
 /* ================= CHAT CORE ================= */
 function el(html){const d=document.createElement('div');d.innerHTML=html.trim();return d.firstChild;}
 function scrollBottom(){const b=document.getElementById('chatBody');b.scrollTop=b.scrollHeight;}
+function scrollToMsgTop(node){
+  const b=document.getElementById('chatBody');
+  const bRect=b.getBoundingClientRect();
+  const nRect=node.getBoundingClientRect();
+  const delta=nRect.top-bRect.top;
+  b.scrollTop=Math.max(0,b.scrollTop+delta-10);
+}
 
 function addUserMsg(text){
   const n=el(`<div class="msg-user"><div class="bubble"></div></div>`);
@@ -565,7 +605,7 @@ function addAgentAnswer(userQ,answer){
 
   answerCount++;
   if(!ctaShown && (meetingIntentNow || answerCount>=4)){addCTA();ctaShown=true;}
-  scrollBottom();
+  scrollToMsgTop(card);
 }
 function escapeHTML(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
