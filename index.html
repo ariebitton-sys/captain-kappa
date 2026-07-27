@@ -672,7 +672,7 @@ function buildFundOpts(){
   const w=document.getElementById('fundOpts');w.innerHTML='';
   for(const key in FUNDS){const f=FUNDS[key];
     const o=el(`<div class="fopt ${key===selFund?'sel':''}" data-k="${key}">
-      <span class="fo-icon">${f.icon}</span><span class="fo-name">${f.name}</span><span class="fo-ret">~${f.ret}%</span></div>`);
+      <span class="fo-icon">${f.icon}</span><span class="fo-name">${f.name}</span><span class="fo-ret">${f.fixed?'':'~'}${f.ret}%</span></div>`);
     o.onclick=()=>{selFund=key;buildFundOpts();calc();};
     w.appendChild(o);}
 }
