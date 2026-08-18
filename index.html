@@ -147,6 +147,7 @@
   @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-7px);opacity:1}}
 
   .chat-input-bar{border-top:1px solid var(--border);background:var(--white);padding:14px 20px 18px;position:relative}
+  .ai-transparency-note{text-align:center;font-size:11px;color:var(--gray-light);margin-top:9px;opacity:.85}
   .ci-inner{max-width:760px;margin:0 auto;position:relative;display:flex;gap:10px;align-items:flex-end}
   .ci-box{flex:1;background:var(--bg);border:2px solid var(--border);border-radius:18px;padding:12px 18px;display:flex;align-items:flex-end;gap:10px;transition:border-color .2s}
   .ci-box:focus-within{border-color:var(--teal)}
@@ -292,6 +293,7 @@
         <textarea id="chatInput" rows="1" placeholder="שאל את קפטן קאפה כל שאלה..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,110)+'px'"></textarea>
       </div>
     </div>
+    <div class="ai-transparency-note">🤖 התשובות נוצרות באמצעות מערכת בינה מלאכותית</div>
   </div>
 </div>
 
@@ -354,7 +356,7 @@
       </div>
       <label class="gate-consent">
         <input type="checkbox" id="leadConsent">
-        <span>אני מאשר/ת לקבוצת קאפה ליצור איתי קשר בנוגע להשקעות נדל"ן, ומסכים/ה לשמירת הפרטים שמסרתי לצורך כך. ניתן להסיר את ההסכמה בכל עת.</span>
+        <span>לפני תחילת השיחה, שים/י לב: המידע שתשתף/י ישמש למטרת מתן שירות, יועבר למערכות AI חיצוניות (OpenRouter, Cohere, Pinecone), וייאחסן ב-Google Sheets. השימוש במידע הוא מרצון. אני מאשר/ת לקבוצת קאפה ליצור איתי קשר בנוגע להשקעות נדל"ן ולשמור את הפרטים שמסרתי לצורך כך. ניתן להסיר את ההסכמה ולממש זכויות עיון/תיקון בכל עת בפנייה לכתובת ofer@kappainv.com.</span>
       </label>
       <button class="gate-btn" onclick="submitLead()">התחל שיחה עם קפטן קאפה</button>
       <div class="gate-err" id="gateErr"></div>
