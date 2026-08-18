@@ -356,10 +356,50 @@
       </div>
       <label class="gate-consent">
         <input type="checkbox" id="leadConsent">
-        <span>לפני תחילת השיחה: המידע שתשתף/י ישמש למתן שירות ולמענה על פנייתך, ויעובד באמצעות מערכות בינה מלאכותית ותשתיות ענן, לרבות ספקים הממוקמים מחוץ לישראל. השימוש במידע הוא מרצון. אני מאשר/ת לקבוצת קאפה ליצור איתי קשר בנוגע להשקעות נדל"ן ולשמור את הפרטים שמסרתי לצורך כך. פירוט מלא של הגורמים המעבדים את המידע מופיע במדיניות הפרטיות. ניתן להסיר את ההסכמה ולממש זכויות עיון/תיקון בכל עת בפנייה ל<a href="mailto:ofer@kappainv.com" style="color:var(--teal-dark)">ofer@kappainv.com</a>.</span>
+        <span>לפני תחילת השיחה: המידע שתשתף/י ישמש למתן שירות ולמענה על פנייתך, ויעובד באמצעות מערכות בינה מלאכותית ותשתיות ענן, לרבות ספקים הממוקמים מחוץ לישראל. השימוש במידע הוא מרצון. אני מאשר/ת לקבוצת קאפה ליצור איתי קשר בנוגע להשקעות נדל"ן ולשמור את הפרטים שמסרתי לצורך כך. פירוט מלא של הגורמים המעבדים את המידע מופיע במדיניות הפרטיות. ניתן להסיר את ההסכמה ולממש זכויות עיון/תיקון בכל עת <a href="#" onclick="openPrivacyForm();return false;" style="color:var(--teal-dark);text-decoration:underline;cursor:pointer">באמצעות טופס פנייה זה</a>.</span>
       </label>
       <button class="gate-btn" onclick="submitLead()">התחל שיחה עם קפטן קאפה</button>
       <div class="gate-err" id="gateErr"></div>
+    </div>
+  </div>
+</div>
+
+<div class="gate-overlay" id="privacyOverlay">
+  <div class="gate-card">
+    <div class="gate-head">
+      <h3>מימוש זכויות פרטיות 🔒</h3>
+      <p>ניתן לבקש עיון, תיקון, מחיקה או הסרת הסכמה לגבי המידע שנשמר. מלא/י את הפרטים והבקשה תישלח לצוות קאפה.</p>
+    </div>
+    <div class="gate-body">
+      <div class="gate-fld">
+        <label>סוג הבקשה</label>
+        <select id="privReqType" style="width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;font-size:15px;font-family:inherit;background:var(--white);color:var(--ink)">
+          <option value="עיון במידע">עיון במידע שנשמר עליי</option>
+          <option value="תיקון מידע">תיקון מידע שגוי</option>
+          <option value="מחיקת מידע">מחיקת המידע שלי</option>
+          <option value="הסרת הסכמה">הסרת הסכמה ליצירת קשר</option>
+        </select>
+      </div>
+      <div class="gate-fld">
+        <label>שם מלא</label>
+        <input type="text" id="privName" placeholder="ישראל ישראלי">
+      </div>
+      <div class="gate-fld">
+        <label>אימייל (שאיתו נרשמת)</label>
+        <input type="email" id="privEmail" placeholder="you@example.com" style="direction:ltr;text-align:right">
+      </div>
+      <div class="gate-fld">
+        <label>פרטים נוספים (לא חובה)</label>
+        <textarea id="privDetails" rows="3" placeholder="פירוט הבקשה..." style="width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;font-size:15px;font-family:inherit;resize:vertical"></textarea>
+      </div>
+      <button class="gate-btn" onclick="sendPrivacyRequest()">שלח בקשה במייל</button>
+      <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--gray);line-height:1.6">
+        אם המייל לא נפתח אוטומטית, ניתן לפנות ישירות אל<br>
+        <span id="privFallbackEmail" style="direction:ltr;display:inline-block;color:var(--teal-dark);font-weight:600">ofer@kappainv.com</span>
+        <button onclick="copyPrivEmail()" style="margin-inline-start:6px;background:none;border:1px solid var(--border);border-radius:7px;padding:2px 9px;font-size:11px;cursor:pointer;color:var(--teal-dark)">העתק</button>
+        <span id="privCopyMsg" style="color:#1e9e5a;font-size:11px;margin-inline-start:5px"></span>
+      </div>
+      <button onclick="closePrivacyForm()" style="width:100%;margin-top:14px;background:none;border:none;color:var(--gray);font-size:13px;cursor:pointer;text-decoration:underline">סגור</button>
     </div>
   </div>
 </div>
@@ -372,6 +412,45 @@ let busy=false;
 let answerCount=0, ctaShown=false;
 const askedSet=new Set();
 function normQ(s){return s.trim().replace(/[?？!।.,]/g,'').toLowerCase();}
+
+/* ===== PRIVACY REQUEST FORM ===== */
+const PRIVACY_EMAIL='ofer@kappainv.com';
+function openPrivacyForm(){
+  // prefill from existing lead if available
+  try{
+    const lead=JSON.parse(localStorage.getItem('kappa_lead')||'{}');
+    if(lead.name)document.getElementById('privName').value=lead.name;
+    if(lead.email)document.getElementById('privEmail').value=lead.email;
+  }catch(e){}
+  document.getElementById('privCopyMsg').textContent='';
+  document.getElementById('privacyOverlay').classList.add('show');
+}
+function closePrivacyForm(){document.getElementById('privacyOverlay').classList.remove('show');}
+function sendPrivacyRequest(){
+  const type=document.getElementById('privReqType').value;
+  const name=document.getElementById('privName').value.trim();
+  const email=document.getElementById('privEmail').value.trim();
+  const details=document.getElementById('privDetails').value.trim();
+  const subject='בקשת מימוש זכויות פרטיות - '+type;
+  let body='סוג הבקשה: '+type+'\n';
+  body+='שם: '+(name||'לא צוין')+'\n';
+  body+='אימייל: '+(email||'לא צוין')+'\n';
+  if(details)body+='פרטים נוספים: '+details+'\n';
+  body+='\nנשלח מטופס מימוש הזכויות באתר קפטן קאפה.';
+  const link='mailto:'+PRIVACY_EMAIL+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  window.location.href=link;
+}
+function copyPrivEmail(){
+  const msg=document.getElementById('privCopyMsg');
+  const done=function(){msg.textContent='הועתק ✓';setTimeout(function(){msg.textContent='';},2000);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(PRIVACY_EMAIL).then(done).catch(function(){msg.textContent=PRIVACY_EMAIL;});
+  }else{
+    const t=document.createElement('textarea');t.value=PRIVACY_EMAIL;document.body.appendChild(t);t.select();
+    try{document.execCommand('copy');done();}catch(e){msg.textContent=PRIVACY_EMAIL;}
+    document.body.removeChild(t);
+  }
+}
 
 /* ===== LEAD GATE ===== */
 const FREE_QUESTIONS=0; // 0 = require registration before first question; N = allow N free questions first
