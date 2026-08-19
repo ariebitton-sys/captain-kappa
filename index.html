@@ -392,9 +392,10 @@
         <label>פרטים נוספים (לא חובה)</label>
         <textarea id="privDetails" rows="3" placeholder="פירוט הבקשה..." style="width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;font-size:15px;font-family:inherit;resize:vertical"></textarea>
       </div>
-      <button class="gate-btn" onclick="sendPrivacyRequest()">שלח בקשה במייל</button>
+      <button class="gate-btn" id="privSendBtn" onclick="sendPrivacyRequest()">שלח בקשה</button>
+      <div id="privStatus" style="text-align:center;margin-top:10px;font-size:13px;line-height:1.5;min-height:18px"></div>
       <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--gray);line-height:1.6">
-        אם המייל לא נפתח אוטומטית, ניתן לפנות ישירות אל<br>
+        אם השליחה נכשלה, ניתן לפנות ישירות אל<br>
         <span id="privFallbackEmail" style="direction:ltr;display:inline-block;color:var(--teal-dark);font-weight:600">ofer@kappainv.com</span>
         <button onclick="copyPrivEmail()" style="margin-inline-start:6px;background:none;border:1px solid var(--border);border-radius:7px;padding:2px 9px;font-size:11px;cursor:pointer;color:var(--teal-dark)">העתק</button>
         <span id="privCopyMsg" style="color:#1e9e5a;font-size:11px;margin-inline-start:5px"></span>
@@ -415,6 +416,7 @@ function normQ(s){return s.trim().replace(/[?？!।.,]/g,'').toLowerCase();}
 
 /* ===== PRIVACY REQUEST FORM ===== */
 const PRIVACY_EMAIL='ofer@kappainv.com';
+const PRIVACY_WEBHOOK='https://ariebitton.app.n8n.cloud/webhook/privacy-request';
 function openPrivacyForm(){
   // prefill from existing lead if available
   try{
@@ -423,22 +425,37 @@ function openPrivacyForm(){
     if(lead.email)document.getElementById('privEmail').value=lead.email;
   }catch(e){}
   document.getElementById('privCopyMsg').textContent='';
+  const st=document.getElementById('privStatus'); if(st){st.textContent='';st.style.color='';}
   document.getElementById('privacyOverlay').classList.add('show');
 }
 function closePrivacyForm(){document.getElementById('privacyOverlay').classList.remove('show');}
-function sendPrivacyRequest(){
+async function sendPrivacyRequest(){
+  const btn=document.getElementById('privSendBtn');
+  const st=document.getElementById('privStatus');
   const type=document.getElementById('privReqType').value;
   const name=document.getElementById('privName').value.trim();
   const email=document.getElementById('privEmail').value.trim();
   const details=document.getElementById('privDetails').value.trim();
-  const subject='בקשת מימוש זכויות פרטיות - '+type;
-  let body='סוג הבקשה: '+type+'\n';
-  body+='שם: '+(name||'לא צוין')+'\n';
-  body+='אימייל: '+(email||'לא צוין')+'\n';
-  if(details)body+='פרטים נוספים: '+details+'\n';
-  body+='\nנשלח מטופס מימוש הזכויות באתר קפטן קאפה.';
-  const link='mailto:'+PRIVACY_EMAIL+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-  window.location.href=link;
+  if(!email){st.style.color='#c0392b';st.textContent='נא להזין אימייל כדי שנוכל לאתר את המידע שלך.';return;}
+  btn.disabled=true;const orig=btn.textContent;btn.textContent='שולח...';
+  st.style.color='var(--gray)';st.textContent='';
+  try{
+    const res=await fetch(PRIVACY_WEBHOOK,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({requestType:type,name:name,email:email,details:details})
+    });
+    if(!res.ok)throw new Error('bad status '+res.status);
+    st.style.color='#1e9e5a';
+    st.textContent='✓ הבקשה נשלחה בהצלחה. נטפל בה ונחזור אליך.';
+    document.getElementById('privDetails').value='';
+    btn.textContent='נשלח ✓';
+    setTimeout(function(){closePrivacyForm();btn.disabled=false;btn.textContent=orig;},2500);
+  }catch(e){
+    st.style.color='#c0392b';
+    st.textContent='השליחה נכשלה. ניתן לפנות ישירות אל ofer@kappainv.com (כפתור ההעתקה למטה).';
+    btn.disabled=false;btn.textContent=orig;
+  }
 }
 function copyPrivEmail(){
   const msg=document.getElementById('privCopyMsg');
