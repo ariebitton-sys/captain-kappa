@@ -356,7 +356,11 @@
       </div>
       <label class="gate-consent">
         <input type="checkbox" id="leadConsent">
-        <span>לפני תחילת השיחה: המידע שתשתף/י ישמש למתן שירות ולמענה על פנייתך, ויעובד באמצעות מערכות בינה מלאכותית ותשתיות ענן, לרבות ספקים הממוקמים מחוץ לישראל. השימוש במידע הוא מרצון. אני מאשר/ת לקבוצת קאפה ליצור איתי קשר בנוגע להשקעות נדל"ן ולשמור את הפרטים שמסרתי לצורך כך. פירוט מלא של הגורמים המעבדים את המידע מופיע במדיניות הפרטיות. ניתן להסיר את ההסכמה ולממש זכויות עיון/תיקון בכל עת <a href="#" onclick="openPrivacyForm();return false;" style="color:var(--teal-dark);text-decoration:underline;cursor:pointer">באמצעות טופס פנייה זה</a>.</span>
+        <span>לפני תחילת השיחה: המידע שתשתף/י ישמש למתן שירות ולמענה על פנייתך, ויעובד באמצעות מערכות בינה מלאכותית ותשתיות ענן, לרבות ספקים הממוקמים מחוץ לישראל. השימוש במידע הוא מרצון. אני מאשר/ת לקבוצת קאפה לשמור את הפרטים שמסרתי ולפנות אליי לצורך מתן השירות שביקשתי. פירוט מלא של הגורמים המעבדים את המידע מופיע במדיניות הפרטיות. ניתן להסיר את ההסכמה ולממש זכויות עיון/תיקון בכל עת <a href="#" onclick="openPrivacyForm();return false;" style="color:var(--teal-dark);text-decoration:underline;cursor:pointer">באמצעות טופס פנייה זה</a>. <b>(חובה)</b></span>
+      </label>
+      <label class="gate-consent">
+        <input type="checkbox" id="marketingConsent">
+        <span>אני מעוניין/ת לקבל מקבוצת קאפה מידע שיווקי, עדכונים והצעות בנוגע להשקעות נדל"ן, בדוא"ל או באמצעים אחרים. ניתן לבטל את ההסכמה בכל עת. <b>(רשות)</b></span>
       </label>
       <button class="gate-btn" onclick="submitLead()">התחל שיחה עם קפטן קאפה</button>
       <div class="gate-err" id="gateErr"></div>
@@ -515,13 +519,14 @@ function submitLead(){
   const name=document.getElementById('leadName').value.trim();
   const email=document.getElementById('leadEmail').value.trim();
   const consent=document.getElementById('leadConsent').checked;
+  const marketingConsent=document.getElementById('marketingConsent').checked;
   const err=document.getElementById('gateErr');
   document.getElementById('leadName').classList.remove('err');
   document.getElementById('leadEmail').classList.remove('err');
   if(name.length<2){err.textContent='נא להזין שם מלא';document.getElementById('leadName').classList.add('err');return;}
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){err.textContent='נא להזין כתובת אימייל תקינה';document.getElementById('leadEmail').classList.add('err');return;}
-  if(!consent){err.textContent='נדרש אישור ליצירת קשר כדי להמשיך';return;}
-  saveLead({name,email,consentAt:new Date().toISOString()});
+  if(!consent){err.textContent='נדרש אישור השימוש במידע כדי להמשיך';return;}
+  saveLead({name,email,consentAt:new Date().toISOString(),marketingConsent:marketingConsent,marketingConsentAt:marketingConsent?new Date().toISOString():''});
   window.newLeadPending=true;
   err.textContent='';
   hideGate();
@@ -742,7 +747,7 @@ async function submitQuestion(text){
   const isNew=window.newLeadPending===true;
   try{
     const r=await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'sendMessage',sessionId:sid,chatInput:text,userName:lead.name||'',userEmail:lead.email||'',isNewLead:isNew})});
+      body:JSON.stringify({action:'sendMessage',sessionId:sid,chatInput:text,userName:lead.name||'',userEmail:lead.email||'',isNewLead:isNew,marketingConsent:lead.marketingConsent===true})});
     if(isNew)window.newLeadPending=false;
     if(!r.ok)throw new Error('HTTP '+r.status);
     const data=await r.json();hideTyping();
