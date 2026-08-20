@@ -9,10 +9,10 @@
   *{margin:0;padding:0;box-sizing:border-box}
   :root{
     --navy:#1B2A4A;--navy-light:#2A3D63;
-    --teal:#2BAAAD;--teal-dark:#1E8A8D;--teal-light:#E8F7F7;
-    --gold:#C9A227;--gold-light:#F5EDD6;
+    --teal:#12797C;--teal-dark:#0F6265;--teal-light:#E8F7F7;
+    --gold:#8A6D10;--gold-light:#F5EDD6;
     --bg:#FAFBFC;--white:#FFFFFF;
-    --gray:#64748B;--gray-light:#94A3B8;--border:#E8EDF2;
+    --gray:#5B6779;--gray-light:#5E6B7E;--border:#D8E0E8;
     --shadow-sm:0 2px 8px rgba(27,42,74,.05);
     --shadow-md:0 4px 20px rgba(27,42,74,.08);
     --shadow-lg:0 8px 32px rgba(27,42,74,.12);
@@ -147,7 +147,27 @@
   @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-7px);opacity:1}}
 
   .chat-input-bar{border-top:1px solid var(--border);background:var(--white);padding:14px 20px 18px;position:relative}
+  .skip-link{position:absolute;right:-9999px;top:0;background:var(--navy);color:#fff;padding:12px 20px;z-index:999;border-radius:0 0 8px 0;text-decoration:none}
+  .skip-link:focus{right:0}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
   .ai-transparency-note{text-align:center;font-size:11px;color:var(--gray-light);margin-top:9px;opacity:.85}
+  .cookie-bar{position:fixed;bottom:0;right:0;left:0;background:#fff;border-top:1px solid var(--border);box-shadow:0 -4px 20px rgba(0,0,0,.08);padding:16px 20px;z-index:300;display:none}
+  .cookie-bar.show{display:block}
+  .cookie-inner{max-width:900px;margin:0 auto;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+  .cookie-txt{font-size:13px;color:var(--gray);line-height:1.6;flex:1;min-width:240px}
+  .cookie-txt a{color:var(--teal-dark)}
+  .cookie-btns{display:flex;gap:8px;flex-shrink:0}
+  .cookie-btn{padding:9px 20px;border-radius:9px;font-size:13px;font-family:inherit;cursor:pointer;border:1px solid var(--border);background:#fff;color:var(--gray)}
+  .cookie-btn.primary{background:var(--teal);color:#fff;border-color:var(--teal);font-weight:600}
+  .a11y-fab{position:fixed;bottom:16px;inline-start:16px;left:16px;width:46px;height:46px;border-radius:50%;background:var(--teal);color:#fff;border:none;cursor:pointer;font-size:22px;z-index:250;box-shadow:0 3px 12px rgba(0,0,0,.2)}
+  .a11y-panel{position:fixed;bottom:70px;left:16px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.15);padding:12px;z-index:260;display:none;min-width:200px}
+  .a11y-panel.show{display:block}
+  .a11y-panel h4{margin:0 0 8px;font-size:14px;color:var(--ink)}
+  .a11y-opt{display:block;width:100%;text-align:right;padding:8px 10px;margin:3px 0;border:1px solid var(--border);border-radius:8px;background:#fff;font-size:13px;font-family:inherit;cursor:pointer;color:var(--ink)}
+  .a11y-opt:hover{background:#f2fafb}
+  body.a11y-contrast{filter:contrast(1.35)}
+  body.a11y-links a{text-decoration:underline !important;font-weight:600 !important}
+  :focus-visible{outline:3px solid var(--teal);outline-offset:2px}
   .ci-inner{max-width:760px;margin:0 auto;position:relative;display:flex;gap:10px;align-items:flex-end}
   .ci-box{flex:1;background:var(--bg);border:2px solid var(--border);border-radius:18px;padding:12px 18px;display:flex;align-items:flex-end;gap:10px;transition:border-color .2s}
   .ci-box:focus-within{border-color:var(--teal)}
@@ -225,6 +245,7 @@
 </style>
 </head>
 <body>
+<a href="#mainContent" class="skip-link">דלג לתוכן הראשי</a>
 
 <header>
   <div class="nav-btns">
@@ -237,7 +258,7 @@
 </header>
 
 <!-- ============ LANDING ============ -->
-<div class="screen active" id="screen-landing">
+<main id="mainContent"><div class="screen active" id="screen-landing">
   <div class="container">
     <div class="hero">
       <img class="hero-captain" id="heroCaptain" src="captain.png" alt="Captain Kappa">
@@ -245,8 +266,8 @@
       <div class="sub">העוזר החכם של קאפה השקעות נדל"ן</div>
       <p class="desc">שאל כל שאלה על מסלולי השקעה, תשואות צפויות, מיסוי, ביטחונות, תהליך ההשקעה ושוק הנדל"ן בקליבלנד — וקבל תשובה מיידית ומבוססת.</p>
       <div class="main-input-wrap">
-        <input class="main-input" id="mainInput" placeholder="מה תרצה לדעת?" onkeydown="if(event.key==='Enter')startChat()">
-        <button class="main-send" onclick="startChat()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+        <input class="main-input" id="mainInput" aria-label="שאל את קפטן קאפה" placeholder="מה תרצה לדעת?" onkeydown="if(event.key==='Enter')startChat()">
+        <button class="main-send" onclick="startChat()" aria-label="שלח שאלה והתחל שיחה"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
       </div>
     </div>
 
@@ -276,6 +297,10 @@
       Kappa Real Estate Investments
       · <a href="mailto:ofer@kappainv.com">צור קשר</a>
       · <a href="https://bit.ly/kappatestimonials" target="_blank">המלצות משקיעים</a>
+      <br>
+      <a href="https://www.kapparealestate.co.il/%D7%AA%D7%A7%D7%A0%D7%95%D7%9F-%D7%94%D7%90%D7%AA%D7%A8-%D7%95%D7%9E%D7%93%D7%99%D7%A0%D7%99%D7%95%D7%AA-%D7%94%D7%A4%D7%A8%D7%98%D7%99%D7%95%D7%AA/" target="_blank" rel="noopener">תקנון ומדיניות פרטיות</a>
+      · <a href="#" onclick="openPrivacyForm();return false;">מימוש זכויות פרטיות</a>
+      · <a href="#" onclick="openA11yStatement();return false;">הצהרת נגישות</a>
     </div>
   </div>
 </div>
@@ -283,17 +308,20 @@
 <!-- ============ CHAT ============ -->
 <div class="screen" id="screen-chat">
   <div class="chat-body" id="chatBody">
-    <div class="chat-inner" id="chatInner"></div>
+    <div class="chat-inner" id="chatInner" role="log" aria-live="polite" aria-relevant="additions text" aria-label="שיחה עם קפטן קאפה"></div>
   </div>
   <img class="captain-mini" id="captainMini" src="captain.png" alt="">
   <div class="chat-input-bar">
     <div class="ci-inner">
-      <button class="ci-send" id="sendBtn" onclick="sendMessage()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+      <button class="ci-send" id="sendBtn" onclick="sendMessage()" aria-label="שלח הודעה"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
       <div class="ci-box">
-        <textarea id="chatInput" rows="1" placeholder="שאל את קפטן קאפה כל שאלה..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,110)+'px'"></textarea>
+        <textarea id="chatInput" rows="1" aria-label="הקלד/י את שאלתך" placeholder="שאל את קפטן קאפה כל שאלה..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,110)+'px'"></textarea>
       </div>
     </div>
-    <div class="ai-transparency-note">🤖 התשובות נוצרות באמצעות מערכת בינה מלאכותית</div>
+    <div class="ai-transparency-note">🤖 התשובות נוצרות באמצעות מערכת בינה מלאכותית
+      · <a href="https://www.kapparealestate.co.il/%D7%AA%D7%A7%D7%A0%D7%95%D7%9F-%D7%94%D7%90%D7%AA%D7%A8-%D7%95%D7%9E%D7%93%D7%99%D7%A0%D7%99%D7%95%D7%AA-%D7%94%D7%A4%D7%A8%D7%98%D7%99%D7%95%D7%AA/" target="_blank" rel="noopener" style="color:var(--teal-dark)">מדיניות פרטיות</a>
+      · <a href="#" onclick="openPrivacyForm();return false;" style="color:var(--teal-dark)">מימוש זכויות</a>
+    </div>
   </div>
 </div>
 
@@ -308,7 +336,7 @@
       <div class="panel">
         <h3>הגדרות</h3>
         <div class="fld">
-          <label>סכום השקעה ($)</label>
+          <label for="calcAmount">סכום השקעה ($)</label>
           <input type="text" id="calcAmount" value="100,000" oninput="formatAmount(this);calc()">
         </div>
         <div class="fund-opts" id="fundOpts"></div>
@@ -338,45 +366,45 @@
 </div>
 
 <!-- ============ LEAD GATE ============ -->
-<div class="gate-overlay" id="gateOverlay">
+<div class="gate-overlay" id="gateOverlay" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
   <div class="gate-card">
     <div class="gate-head">
       <img src="captain.png" alt="">
-      <h3>נעים להכיר! 👋</h3>
+      <h3 id="gateTitle">נעים להכיר! 👋</h3>
       <p>כדי שקפטן קאפה יוכל לתת לך את השירות הטוב ביותר, נשמח להכיר אותך בקצרה</p>
     </div>
     <div class="gate-body">
       <div class="gate-fld">
-        <label>שם מלא</label>
+        <label for="leadName">שם מלא</label>
         <input type="text" id="leadName" placeholder="ישראל ישראלי">
       </div>
       <div class="gate-fld">
-        <label>אימייל</label>
+        <label for="leadEmail">אימייל</label>
         <input type="email" id="leadEmail" placeholder="you@example.com" style="direction:ltr;text-align:right">
       </div>
       <label class="gate-consent">
         <input type="checkbox" id="leadConsent">
-        <span>לפני תחילת השיחה: המידע שתשתף/י ישמש למתן שירות ולמענה על פנייתך, ויעובד באמצעות מערכות בינה מלאכותית ותשתיות ענן, לרבות ספקים הממוקמים מחוץ לישראל. השימוש במידע הוא מרצון. אני מאשר/ת לקבוצת קאפה לשמור את הפרטים שמסרתי ולפנות אליי לצורך מתן השירות שביקשתי. פירוט מלא של הגורמים המעבדים את המידע מופיע במדיניות הפרטיות. ניתן להסיר את ההסכמה ולממש זכויות עיון/תיקון בכל עת <a href="#" onclick="openPrivacyForm();return false;" style="color:var(--teal-dark);text-decoration:underline;cursor:pointer">באמצעות טופס פנייה זה</a>. <b>(חובה)</b></span>
+        <span>לפני תחילת השיחה: המידע שתשתף/י ישמש למתן שירות ולמענה על פנייתך, ויעובד באמצעות מערכות בינה מלאכותית ותשתיות ענן, לרבות ספקים הממוקמים מחוץ לישראל. השימוש במידע הוא מרצון. אני מאשר/ת לקבוצת קאפה לשמור את הפרטים שמסרתי ולפנות אליי לצורך מתן השירות שביקשתי. פירוט מלא מופיע ב<a href="https://www.kapparealestate.co.il/%D7%AA%D7%A7%D7%A0%D7%95%D7%9F-%D7%94%D7%90%D7%AA%D7%A8-%D7%95%D7%9E%D7%93%D7%99%D7%A0%D7%99%D7%95%D7%AA-%D7%94%D7%A4%D7%A8%D7%98%D7%99%D7%95%D7%AA/" target="_blank" rel="noopener" style="color:var(--teal-dark);text-decoration:underline">תקנון ומדיניות הפרטיות</a>. ניתן להסיר את ההסכמה ולממש זכויות עיון/תיקון בכל עת <a href="#" onclick="openPrivacyForm();return false;" style="color:var(--teal-dark);text-decoration:underline;cursor:pointer">באמצעות טופס פנייה זה</a>. <b>(חובה)</b></span>
       </label>
       <label class="gate-consent">
         <input type="checkbox" id="marketingConsent">
         <span>אני מעוניין/ת לקבל מקבוצת קאפה מידע שיווקי, עדכונים והצעות בנוגע להשקעות נדל"ן, בדוא"ל או באמצעים אחרים. ניתן לבטל את ההסכמה בכל עת. <b>(רשות)</b></span>
       </label>
       <button class="gate-btn" onclick="submitLead()">התחל שיחה עם קפטן קאפה</button>
-      <div class="gate-err" id="gateErr"></div>
+      <div class="gate-err" id="gateErr" role="alert" aria-live="assertive"></div>
     </div>
   </div>
 </div>
 
-<div class="gate-overlay" id="privacyOverlay">
+<div class="gate-overlay" id="privacyOverlay" role="dialog" aria-modal="true" aria-labelledby="privTitle">
   <div class="gate-card">
     <div class="gate-head">
-      <h3>מימוש זכויות פרטיות 🔒</h3>
+      <h3 id="privTitle">מימוש זכויות פרטיות 🔒</h3>
       <p>ניתן לבקש עיון, תיקון, מחיקה או הסרת הסכמה לגבי המידע שנשמר. מלא/י את הפרטים והבקשה תישלח לצוות קאפה.</p>
     </div>
     <div class="gate-body">
       <div class="gate-fld">
-        <label>סוג הבקשה</label>
+        <label for="privReqType">סוג הבקשה</label>
         <select id="privReqType" style="width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;font-size:15px;font-family:inherit;background:var(--white);color:var(--ink)">
           <option value="עיון במידע">עיון במידע שנשמר עליי</option>
           <option value="תיקון מידע">תיקון מידע שגוי</option>
@@ -385,19 +413,19 @@
         </select>
       </div>
       <div class="gate-fld">
-        <label>שם מלא</label>
+        <label for="privName">שם מלא</label>
         <input type="text" id="privName" placeholder="ישראל ישראלי">
       </div>
       <div class="gate-fld">
-        <label>אימייל (שאיתו נרשמת)</label>
+        <label for="privEmail">אימייל (שאיתו נרשמת)</label>
         <input type="email" id="privEmail" placeholder="you@example.com" style="direction:ltr;text-align:right">
       </div>
       <div class="gate-fld">
-        <label>פרטים נוספים (לא חובה)</label>
+        <label for="privDetails">פרטים נוספים (לא חובה)</label>
         <textarea id="privDetails" rows="3" placeholder="פירוט הבקשה..." style="width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;font-size:15px;font-family:inherit;resize:vertical"></textarea>
       </div>
       <button class="gate-btn" id="privSendBtn" onclick="sendPrivacyRequest()">שלח בקשה</button>
-      <div id="privStatus" style="text-align:center;margin-top:10px;font-size:13px;line-height:1.5;min-height:18px"></div>
+      <div id="privStatus" role="status" aria-live="polite" style="text-align:center;margin-top:10px;font-size:13px;line-height:1.5;min-height:18px"></div>
       <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--gray);line-height:1.6">
         אם השליחה נכשלה, ניתן לפנות ישירות אל<br>
         <span id="privFallbackEmail" style="direction:ltr;display:inline-block;color:var(--teal-dark);font-weight:600">ofer@kappainv.com</span>
@@ -420,8 +448,94 @@ function normQ(s){return s.trim().replace(/[?？!।.,]/g,'').toLowerCase();}
 
 /* ===== PRIVACY REQUEST FORM ===== */
 const PRIVACY_EMAIL='ofer@kappainv.com';
+
+/* ===== COOKIE NOTICE ===== */
+function acceptCookies(){
+  try{localStorage.setItem('kappa_cookie_ok','1');}catch(e){}
+  try{document.cookie='kappa_cookie_ok=1;path=/;max-age=31536000';}catch(e){}
+  document.getElementById('cookieBar').classList.remove('show');
+}
+function initCookieBar(){
+  var ok=false;
+  try{ok=localStorage.getItem('kappa_cookie_ok')==='1';}catch(e){}
+  if(!ok){ try{ok=document.cookie.indexOf('kappa_cookie_ok=1')>-1; }catch(e){} }
+  if(!ok)document.getElementById('cookieBar').classList.add('show');
+}
+
+/* ===== A11Y: DIALOG FOCUS MANAGEMENT (WCAG 2.4.3, 2.1.2) ===== */
+var _lastFocus=null;
+function a11yOpenDialog(id){
+  _lastFocus=document.activeElement;
+  var el=document.getElementById(id);
+  el.classList.add('show');
+  setTimeout(function(){
+    var f=el.querySelector('button,[href],input,select,textarea');
+    if(f)f.focus();
+  },80);
+}
+function a11yCloseDialog(id){
+  document.getElementById(id).classList.remove('show');
+  if(_lastFocus&&_lastFocus.focus)_lastFocus.focus();
+}
+function a11yTrap(e){
+  var open=document.querySelector('.gate-overlay.show');
+  if(!open)return;
+  if(e.key==='Escape'){
+    if(open.id==='gateOverlay')return; /* gate is mandatory */
+    open.classList.remove('show');
+    if(_lastFocus&&_lastFocus.focus)_lastFocus.focus();
+    return;
+  }
+  if(e.key!=='Tab')return;
+  var f=open.querySelectorAll('button,[href],input,select,textarea');
+  if(!f.length)return;
+  var first=f[0],last=f[f.length-1];
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+}
+document.addEventListener('keydown',a11yTrap);
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    var p=document.getElementById('a11yPanel');
+    if(p&&p.classList.contains('show')){p.classList.remove('show');document.getElementById('a11yFab').setAttribute('aria-expanded','false');document.getElementById('a11yFab').focus();}
+  }
+});
+
+/* ===== ACCESSIBILITY ===== */
+var a11yStep=0;
+function toggleA11y(){
+  var p=document.getElementById('a11yPanel'),f=document.getElementById('a11yFab');
+  var open=p.classList.toggle('show');
+  f.setAttribute('aria-expanded',open?'true':'false');
+  if(open){var b=p.querySelector('.a11y-opt'); if(b)b.focus();}
+}
+function a11yFont(dir){
+  a11yStep=Math.max(-2,Math.min(4,a11yStep+dir));
+  document.documentElement.style.fontSize=(100+a11yStep*10)+'%';
+  try{localStorage.setItem('kappa_a11y_font',a11yStep);}catch(e){}
+}
+function a11yToggle(cls){
+  document.body.classList.toggle(cls);
+  try{localStorage.setItem('kappa_'+cls,document.body.classList.contains(cls)?'1':'0');}catch(e){}
+}
+function a11yReset(){
+  a11yStep=0;document.documentElement.style.fontSize='';
+  document.body.classList.remove('a11y-contrast','a11y-links');
+  try{localStorage.removeItem('kappa_a11y_font');localStorage.removeItem('kappa_a11y-contrast');localStorage.removeItem('kappa_a11y-links');}catch(e){}
+}
+function initA11y(){
+  try{
+    var f=parseInt(localStorage.getItem('kappa_a11y_font')||'0',10);
+    if(f){a11yStep=f;document.documentElement.style.fontSize=(100+f*10)+'%';}
+    if(localStorage.getItem('kappa_a11y-contrast')==='1')document.body.classList.add('a11y-contrast');
+    if(localStorage.getItem('kappa_a11y-links')==='1')document.body.classList.add('a11y-links');
+  }catch(e){}
+}
+function openA11yStatement(){document.getElementById('a11yPanel').classList.remove('show');document.getElementById('a11yFab').setAttribute('aria-expanded','false');a11yOpenDialog('a11yOverlay');}
+function closeA11yStatement(){a11yCloseDialog('a11yOverlay');}
+document.addEventListener('DOMContentLoaded',function(){initCookieBar();initA11y();});
 const PRIVACY_WEBHOOK='https://ariebitton.app.n8n.cloud/webhook/privacy-request';
-function openPrivacyForm(){
+function openPrivacyForm(){ /* focus managed below */
   // prefill from existing lead if available
   try{
     const lead=JSON.parse(localStorage.getItem('kappa_lead')||'{}');
@@ -430,9 +544,9 @@ function openPrivacyForm(){
   }catch(e){}
   document.getElementById('privCopyMsg').textContent='';
   const st=document.getElementById('privStatus'); if(st){st.textContent='';st.style.color='';}
-  document.getElementById('privacyOverlay').classList.add('show');
+  a11yOpenDialog('privacyOverlay');
 }
-function closePrivacyForm(){document.getElementById('privacyOverlay').classList.remove('show');}
+function closePrivacyForm(){a11yCloseDialog('privacyOverlay');}
 async function sendPrivacyRequest(){
   const btn=document.getElementById('privSendBtn');
   const st=document.getElementById('privStatus');
@@ -572,6 +686,12 @@ const GENERAL_COMPARE_RE=/(בין המסלולים|כל המסלולים|כל ה
 
 /* ================= NAVIGATION ================= */
 function showScreen(name){
+  /* move focus to the newly shown screen for screen-reader users */
+  setTimeout(function(){
+    var s=document.getElementById('screen-'+name);
+    if(s){var hd=s.querySelector('h1,h2,h3');
+      if(hd){hd.setAttribute('tabindex','-1');hd.focus();}}
+  },60);
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
   window.scrollTo(0,0);
@@ -836,5 +956,55 @@ function askAboutFund(){
   submitQuestion(`אני שוקל להשקיע $${amt.toLocaleString('en-US')} במסלול ${f.name}. ספר לי עוד על המסלול הזה`);
 }
 </script>
+
+</main>
+
+<div class="cookie-bar" id="cookieBar" role="region" aria-label="הודעת עוגיות">
+  <div class="cookie-inner">
+    <div class="cookie-txt">
+      אנו משתמשים באחסון מקומי ובעוגיה טכנית הכרחית לצורך תפעול השירות ושמירת פרטי ההרשמה שלך בין מסכים. איננו משתמשים בעוגיות פרסום או מעקב.
+      <a href="https://www.kapparealestate.co.il/%D7%AA%D7%A7%D7%A0%D7%95%D7%9F-%D7%94%D7%90%D7%AA%D7%A8-%D7%95%D7%9E%D7%93%D7%99%D7%A0%D7%99%D7%95%D7%AA-%D7%94%D7%A4%D7%A8%D7%98%D7%99%D7%95%D7%AA/" target="_blank" rel="noopener">למידע נוסף</a>
+    </div>
+    <div class="cookie-btns">
+      <button class="cookie-btn primary" onclick="acceptCookies()">הבנתי</button>
+    </div>
+  </div>
+</div>
+
+<button class="a11y-fab" id="a11yFab" onclick="toggleA11y()" aria-expanded="false" aria-controls="a11yPanel" aria-label="תפריט נגישות" title="נגישות">♿</button>
+<div class="a11y-panel" id="a11yPanel" role="dialog" aria-label="אפשרויות נגישות">
+  <h4>נגישות</h4>
+  <button class="a11y-opt" onclick="a11yFont(1)">הגדל טקסט</button>
+  <button class="a11y-opt" onclick="a11yFont(-1)">הקטן טקסט</button>
+  <button class="a11y-opt" onclick="a11yToggle('a11y-contrast')">ניגודיות גבוהה</button>
+  <button class="a11y-opt" onclick="a11yToggle('a11y-links')">הדגשת קישורים</button>
+  <button class="a11y-opt" onclick="a11yReset()">איפוס</button>
+  <button class="a11y-opt" onclick="openA11yStatement()">הצהרת נגישות</button>
+</div>
+
+<div class="gate-overlay" id="a11yOverlay" role="dialog" aria-modal="true" aria-labelledby="a11yTitle">
+  <div class="gate-card" style="max-width:600px">
+    <div class="gate-head"><h3 id="a11yTitle">הצהרת נגישות ♿</h3><p>עודכן: אוגוסט 2026</p></div>
+    <div class="gate-body" style="max-height:65vh;overflow-y:auto;text-align:right;line-height:1.75;font-size:14px">
+      <p style="background:#fff8e6;border-right:3px solid #f0a020;padding:10px 12px;border-radius:6px;font-size:13px">
+        <b>לתשומת לב:</b> טיוטה. יש להשלים את הפרטים המסומנים ולבצע בדיקת נגישות מקצועית לפני פרסום.
+      </p>
+      <p>אנו רואים חשיבות בהנגשת השירות לכלל המשתמשים, לרבות אנשים עם מוגבלות, בהתאם לחוק שוויון זכויות לאנשים עם מוגבלות, התשנ"ח-1998 ולתקנות הנגישות.</p>
+      <h4 style="margin:16px 0 6px;color:var(--teal-dark)">מה הונגש</h4>
+      <ul style="padding-inline-start:20px">
+        <li>תמיכה בניווט מקלדת ובסימון פוקוס ברור.</li>
+        <li>שינוי גודל טקסט, ניגודיות גבוהה והדגשת קישורים.</li>
+        <li>מבנה סמנטי ותוויות לקוראי מסך.</li>
+        <li>תמיכה בכיווניות עברית (RTL).</li>
+      </ul>
+      <h4 style="margin:16px 0 6px;color:var(--teal-dark)">מגבלות ידועות</h4>
+      <p>ייתכנו רכיבים שטרם הונגשו במלואם. אנו פועלים לשיפור מתמיד.</p>
+      <h4 style="margin:16px 0 6px;color:var(--teal-dark)">רכז הנגישות</h4>
+      <p><b>[שם רכז הנגישות]</b> · <a href="mailto:ofer@kappainv.com" style="color:var(--teal-dark)">ofer@kappainv.com</a> · <b>[טלפון]</b></p>
+      <p>נתקלת בבעיית נגישות? נשמח לדעת ונטפל בהקדם.</p>
+      <button onclick="closeA11yStatement()" class="gate-btn" style="margin-top:18px">סגור</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
