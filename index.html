@@ -567,7 +567,7 @@ function initA11y(){
 }
 function openA11yStatement(){document.getElementById('a11yPanel').classList.remove('show');document.getElementById('a11yFab').setAttribute('aria-expanded','false');a11yOpenDialog('a11yOverlay');}
 function closeA11yStatement(){a11yCloseDialog('a11yOverlay');}
-document.addEventListener('DOMContentLoaded',function(){initCookieBar();initA11y();});
+document.addEventListener('DOMContentLoaded',function(){initCookieBar();initA11y();pushLeadToCrm();});
 const PRIVACY_WEBHOOK='https://ariebitton.app.n8n.cloud/webhook/privacy-request';
 function openPrivacyForm(){ /* focus managed below */
   // prefill from existing lead if available
@@ -660,6 +660,71 @@ function saveLead(l){
   try{localStorage.setItem('kappa_lead',s);}catch(e){}
   setCookie('kappa_lead',s,365);
 }
+/* ===== CRM: a new registration becomes a lead in the Kappa CRM =====
+   Uses the same n8n webhooks as the CRM and its public referral form:
+   add → update (owner + follow-up call task) → notify. Runs in the
+   background and never blocks or breaks the chat. */
+const CRM_API='https://ariebitton.app.n8n.cloud/webhook';
+const CRM_CAMPAIGN='קפטן קאפה';
+const CRM_SOURCE='captain_kappa';
+const CRM_OWNER='ofer@kappainv.com';
+const CRM_CALL_TITLE='שיחה';
+const CRM_MAX_TRIES=3;
+let crmBusy=false;
+function crmPad(n){return (n<10?'0':'')+n;}
+function crmDMY(d){return crmPad(d.getDate())+'/'+crmPad(d.getMonth()+1)+'/'+d.getFullYear();}
+function crmIsraelNow(){
+  const p={};
+  new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jerusalem',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',hourCycle:'h23'})
+    .formatToParts(new Date()).forEach(x=>{p[x.type]=x.value;});
+  return {date:new Date(Number(p.year),Number(p.month)-1,Number(p.day)),hour:Number(p.hour)};
+}
+// Same working day before 17:00 Sun–Thu, otherwise the next Sun–Thu — so it
+// lands in that morning's "calls for today" in the CRM.
+function crmNextCallDate(){
+  const now=crmIsraelNow();const d=new Date(now.date.getTime());
+  if(now.hour>=17)d.setDate(d.getDate()+1);
+  while(d.getDay()===5||d.getDay()===6)d.setDate(d.getDate()+1);
+  return d;
+}
+function crmOneLine(s){return String(s||'').replace(/\s+/g,' ').trim();}
+function crmPost(url,body){
+  return fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),keepalive:true})
+    .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json().catch(()=>({}));});
+}
+function crmMark(fields){const l=getLead();if(l){Object.assign(l,fields);saveLead(l);}}
+async function pushLeadToCrm(firstQuestion){
+  const lead=getLead();
+  if(!lead||lead.crm!=='pending'||crmBusy)return;
+  if((lead.crmTries||0)>=CRM_MAX_TRIES)return;
+  crmBusy=true;
+  crmMark({crmTries:(lead.crmTries||0)+1});
+  const today=crmDMY(crmIsraelNow().date);
+  const due=crmDMY(crmNextCallDate());
+  let summary='['+today+'] נרשם/ה בצ׳אטבוט קפטן קאפה';
+  summary+='\n['+today+'] '+(lead.marketingConsent?'אישר/ה קבלת דיוור שיווקי':'לא אישר/ה קבלת דיוור שיווקי');
+  const q=crmOneLine(firstQuestion);
+  if(q)summary+='\n['+today+'] שאלה ראשונה לקפטן: '+(q.length>300?q.slice(0,300)+'…':q);
+  const row={name:lead.name,phone:'',email:lead.email,stage:'new',campaign:CRM_CAMPAIGN,referrer:'',
+    amount:'',track:'',investments:'',meeting_date:'',last_contact:'',next_call:due,summary:summary,source:CRM_SOURCE};
+  try{
+    const created=await crmPost(CRM_API+'/crm/lead/add',row);
+    // The lead exists from here on — never add it again, even if the rest fails.
+    crmMark({crm:'sent'});
+    const id=created&&created.id!=null?String(created.id):'';
+    if(!id)return;
+    const task={id:'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),title:CRM_CALL_TITLE,type:'call',
+      due:due,owner:CRM_OWNER,done:false,created_at:today,auto:true};
+    const full=Object.assign({},row,created,{id:id,owner:CRM_OWNER,tasks:JSON.stringify([task]),stage_since:today});
+    await crmPost(CRM_API+'/crm/lead/update',full);
+    const actor='צ׳אטבוט קפטן קאפה';
+    crmPost(CRM_API+'/crm/notify',{event:'task_assigned',actor:'',payload:{to:CRM_OWNER,task_title:CRM_CALL_TITLE,
+      lead_name:lead.name,due:due,campaign:CRM_CAMPAIGN,actor_name:actor}}).catch(()=>{});
+    crmPost(CRM_API+'/crm/notify',{event:'lead_new',actor:'',payload:{lead_name:lead.name,campaign:CRM_CAMPAIGN,actor_name:actor}}).catch(()=>{});
+  }catch(e){
+    /* still 'pending' if the add itself failed → retried on the next visit */
+  }finally{crmBusy=false;}
+}
 function needGate(){return !getLead() && questionCount>=FREE_QUESTIONS;}
 function showGate(){document.getElementById('gateOverlay').classList.add('show');setTimeout(()=>document.getElementById('leadName').focus(),200);}
 function hideGate(){document.getElementById('gateOverlay').classList.remove('show');}
@@ -674,8 +739,12 @@ function submitLead(){
   if(name.length<2){err.textContent='נא להזין שם מלא';document.getElementById('leadName').classList.add('err');return;}
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){err.textContent='נא להזין כתובת אימייל תקינה';document.getElementById('leadEmail').classList.add('err');return;}
   if(!consent){err.textContent='נדרש אישור השימוש במידע כדי להמשיך';return;}
-  saveLead({name,email,consentAt:new Date().toISOString(),marketingConsent:marketingConsent,marketingConsentAt:marketingConsent?new Date().toISOString():''});
+  // crm:'pending' marks a brand-new registration. Only these are sent to the
+  // CRM — people who registered before this existed carry no flag and are
+  // never sent, and returning visitors never see this form at all.
+  saveLead({name,email,consentAt:new Date().toISOString(),marketingConsent:marketingConsent,marketingConsentAt:marketingConsent?new Date().toISOString():'',crm:'pending',crmTries:0});
   window.newLeadPending=true;
+  pushLeadToCrm(pendingQuestion);
   err.textContent='';
   hideGate();
   if(pendingQuestion){const q=pendingQuestion;pendingQuestion=null;submitQuestion(q);}
